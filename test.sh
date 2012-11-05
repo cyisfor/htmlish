@@ -4,6 +4,11 @@
     echo 'derp <pre>'
     echo '  whee    wheeee'
     echo '</pre> erpd'
+    echo 'derp2 '
+    echo
+    echo
+    echo
+    echo '<blockquote>beep</blockquote>'
 ) | ./parse > test.html
 
 xmlwf test.html > wf.log
