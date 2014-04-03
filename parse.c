@@ -6,6 +6,12 @@
 
 #define BUFSIZE 0x1000
 
+int inParagraph = 0;
+
+#define PUTLITERAL(literal) fwrite(literal,1,sizeof(literal)-1,stdout)
+#define PUTS(s) fwrite(s,1,strlen(s),stdout)
+#define PUTC(c) fputc(c,stdout)
+
 static void processText(xmlChar* text, int lastisElement, int nextisElement) {
     xmlChar* start = text;
     xmlChar* end = start;
@@ -14,20 +20,36 @@ static void processText(xmlChar* text, int lastisElement, int nextisElement) {
         end = strchr(start,'\n');
         if(end==NULL) {
             if(strlen(start)>0) {
-                if(!(first && lastisElement))
-                    fputs("<p>",stdout);
+                if(!inParagraph) {
+                    inParagraph = 1;
+                    PUTLITERAL("<p>");
+                }
                 first = 0;
-                fputs(start,stdout);
-                if(!nextisElement)
-                    puts("</p>");
+                PUTS(start);
+                if(!nextisElement && inParagraph) {
+                    inParagraph = 0;
+                    PUTLITERAL("</p>");
+                }
             }
         } else {
-            if(start<end) {
-                if(!(first && lastisElement))
-                    fputs("<p>",stdout);
+            if(lastisElement) {
+                PUTC('\n');
+                lastisElement = 0;
+            }
+            if(end==start) {
+                if(end[1]=='\0')
+                    PUTC('\n');
+            } else if(start<end) {
+                if(!inParagraph) {
+                    inParagraph = 1;
+                    PUTLITERAL("<p>");
+                }
                 first = 0;
                 fwrite(start,1,end-start,stdout);
-                puts("</p>");
+                if(inParagraph) {
+                    inParagraph = 0;
+                    PUTLITERAL("</p>");
+                }
             }
             start = end+1;
             end = start;
@@ -36,33 +58,49 @@ static void processText(xmlChar* text, int lastisElement, int nextisElement) {
 }
 
 static void printElement(xmlNode* cur) {
-    printf("<%s",cur->name);
+    PUTC('<');
+    PUTS(cur->name);
     xmlAttr* attr = cur->properties;
     for(;attr;attr=attr->next) {
-        printf(" %s=\"%s\"",attr->name,attr->children->content);
+        PUTC(' ');
+        PUTS(attr->name);
+        PUTC('=');
+        PUTC('"');
+        PUTS(attr->children->content);
+        PUTC('"');
     }
     if(cur->children==NULL) {
-        fputs("/>",stdout);
+        PUTLITERAL("/>");
         return;
     } else {
-        fputc('>',stdout);
+        PUTC('>');
         xmlNode* parent = cur;
         for(cur = parent->children; cur; cur = cur->next) {
             switch(cur->type) {
+            case XML_COMMENT_NODE:
+                PUTLITERAL("<!--");
+                PUTS(cur->content);
+                PUTLITERAL("-->\n");
+                continue;
             case XML_ELEMENT_NODE:
                 printElement(cur);
                 continue;
             case XML_TEXT_NODE:
-                fputs(cur->content,stdout);
+                PUTS(cur->content);
+                continue;
+            case XML_CDATA_SECTION_NODE:
+                PUTLITERAL("<![CDATA[");
+                PUTS(cur->content);
+                PUTLITERAL("]]>");
                 continue;
             default:
                 fprintf(stderr,"wtf is %d",cur->type);
                 exit(3);
             };
         }
-        fputs("</",stdout);
-        fputs(parent->name,stdout);
-        fputc('>',stdout);
+        PUTLITERAL("</");
+        PUTS(parent->name);
+        PUTC('>');
     }
 }
 
@@ -71,9 +109,19 @@ static void processRoot(xmlNode* root) {
     int lastisElement = 0;
     for(cur=root->children;cur;cur = cur->next) {
         switch(cur->type) {
+        case XML_COMMENT_NODE:
+            PUTLITERAL("<!--");
+            PUTS(cur->content);
+            PUTLITERAL("-->\n");
+            continue;
         case XML_ELEMENT_NODE:
             printElement(cur);
             lastisElement = 1;
+            continue;
+        case XML_CDATA_SECTION_NODE:
+            PUTLITERAL("<![CDATA[");
+            PUTS(cur->content);
+            PUTLITERAL("]]>");
             continue;
         case XML_TEXT_NODE:
             processText(cur->content,
@@ -88,7 +136,7 @@ static void processRoot(xmlNode* root) {
     }
 }
 
-#define HEADER "<?xml version=\"1.0\"?>\n<root>"
+#define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>"
 #define FOOTER "</root>"
 
 xmlDoc* readFunky(void) {
@@ -114,6 +162,26 @@ xmlDoc* readFunky(void) {
     return doc;
 }
 
+static void tryPut(const char* maybeFile) {
+    if(!maybeFile) return;
+
+    FILE* inp = fopen(maybeFile,"rt");
+    if(inp) {
+        char buf[0x1000];
+        for(;;) {
+            ssize_t amt = fread(buf,1,0x1000,inp);
+            if(amt<=0) break;
+            fwrite(buf,1,amt,stdout);
+        }
+        fclose(inp);
+    } else {
+        // XXX: this is a horrible hack how do
+        if(strchr(maybeFile,'\n') == NULL && strchr(maybeFile,'<')==NULL) return;
+        // the file doesn't exist, so it must be a text blurb
+        fwrite(maybeFile,1,strlen(maybeFile),stdout);
+    }
+}
+
 int main(void) {
 
     LIBXML_TEST_VERSION;
@@ -123,15 +191,35 @@ int main(void) {
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
     xmlNode* cur = root;
-    puts("<?xml version=\"1.0\"?>\n"
+    PUTLITERAL("<?xml version=\"1.0\"?>\n"
         "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
          "<html lang=\"en\" xml:lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-         "<head>");
-    if(getenv("title")) {
-        printf("<title>%s</title>\n",getenv("title"));
+         "<head>\n"
+         "<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />");
+    const char* title = getenv("title");
+    if(title) {
+        PUTLITERAL("<title>");
+        PUTS(title);
+        PUTLITERAL("</title>\n");
     }
-    puts("</head><body>");
+    const char* style = getenv("style");
+    if(style) {
+        PUTLITERAL("<link rel=\"stylesheet\" href=\"");
+        PUTS(style);
+        PUTLITERAL("\" />");
+    }
+    tryPut(getenv("head"));
+    PUTLITERAL("</head><body>");
+    tryPut(getenv("top"));
+    if(title) {
+        PUTLITERAL("<h1>");
+        PUTS(title);
+        PUTLITERAL("</h1>\n");
+    }
     processRoot(root);
-    puts("</body></html>");
+    if(inParagraph)
+        PUTLITERAL("</p>");
+    tryPut(getenv("footer"));
+    PUTLITERAL("</body></html>");
     return 0;
 }
