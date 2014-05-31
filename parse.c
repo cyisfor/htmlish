@@ -4,15 +4,117 @@
 #include <assert.h>
 #include <string.h>
 
+/* possible states:
+ * 1 text+blankline, element = end paragraph in the middle
+ * 2 element, blankline+text = start paragraph in the middle
+ * 3 text(noblank), element = nothing
+ * 4 element, (noblank)+text = nothing
+ * 5 file start, text = start paragraph before
+ * 6 file start, element = nothing
+ * 7 text, file end = end paragraph after
+ * 8 element, file end = nothing
+ *
+ * state = e, text can follow with state = text, e (text is same even if blankline etc)
+ * cannot start with "end paragraph" states or "file end" states
+ * starting states ending in element always do nothing
+ *
+ * 1 = end state (for example)
+ * 2, 1 = wrap in a paragraph e, p( t.strip ), e
+ * 2, 3 = e, p(t.strip, e)
+ * 2, 7 = wrap in a paragraph e, p( t.strip ), file end
+ * 3, 2 = nothing (for example)
+ * 4, 1 = p(e, t), e
+ * 4, 3 = nothing
+ * 4, 7 = p(e, t)
+ * 5, 1 = p(t), e
+ * 5, 3 = p(t, e)
+ * 5, 7 = p(t)
+ *
+ * A = file start, B = first thingy or file end
+ * if B is file end, empty document, done
+ * C = second thingy or file end
+ * if C is file end
+ *   if A is text, wrap in paragraph
+ *   done
+ * until done
+ *   A = B
+ *   B = C
+ *   repeat
+ *     C = next thingy
+ *     if B is text and C is text
+ *       (text, text ? bleah!)
+ *       B = append(B,C)
+ *     else 
+ *       break
+ *   if A is file start (state 5)
+ *     if B is element continue    
+ *     if C is file end (state 5,7)
+ *       makeP(B)
+ *       break done
+ *     if B.endblank (state 5,1)
+ *       makeP(B)
+ *     else (state 5,3)
+ *       makeP(B,C)
+ *       UGH also have to split text in the middle...
+ *   else if A is element (states 2, 4)
+ *     if B is element continue
+ *     ( should have broken loop if C is file end, so B is never file end)
+ *     if B.startblank (state 2)
+ *       if C is element (states 1, 3)
+ *         if B.endblank (state 2,1)
+ *           makeP(B)
+ *         else (state 2,3)
+ *           makeP(B,C)
+ *       else if C is file end (state 2,7)
+ *         makeP(B)
+ *         break done
+ *     else (state 4)
+ *       if C is element (states 1, 3)
+ *         if B.endblank (state 4,1)
+ *           makeP(A,B)
+ *       else if C is end file (state 4,7)
+ *         makeP(A,B)
+ *         break done
+ *   else (states 1, 3)
+ *     if B is element 
+ *   if A,B is state (1,3,7,8) continue
+ *   if A,B is state 2
+ *
+ * first, check if starting state ends in element, do nothing
+ * second, 
+ */
+
 #define BUFSIZE 0x1000
 
 int inParagraph = 0;
 
+void mywrite(const xmlChar* input, ssize_t len, FILE* fp) {
+    int i;
+    for(i=0;i<len;++i) {
+        xmlChar c = input[i];
+        switch(c) {
+            case '<':
+                fwrite("&lt;",1,4,fp);
+                break;
+            case '>':
+                fwrite("&gt;",1,4,fp);
+                break;
+            case '&':
+                fwrite("&amp;",1,5,fp);
+                break;
+            default:
+                fputc(c,fp);
+        };
+    }
+}
+
 #define PUTLITERAL(literal) fwrite(literal,1,sizeof(literal)-1,stdout)
-#define PUTS(s) fwrite(s,1,strlen(s),stdout)
+#define PUTPLAIN(s) fwrite(s,1,strlen(s),stdout)
+#define WRITE(s,len) mywrite(s,len,stdout)
+#define PUTS(s) WRITE(s,strlen(s))
 #define PUTC(c) fputc(c,stdout)
 
-static void processText(xmlChar* text, int lastisElement, int nextisElement) {
+static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nextisElement) {
     xmlChar* start = text;
     xmlChar* end = start;
     int first = 1;
@@ -45,7 +147,7 @@ static void processText(xmlChar* text, int lastisElement, int nextisElement) {
                     PUTLITERAL("<p>");
                 }
                 first = 0;
-                fwrite(start,1,end-start,stdout);
+                WRITE(start,end-start);
                 if(inParagraph) {
                     inParagraph = 0;
                     PUTLITERAL("</p>");
@@ -59,13 +161,14 @@ static void processText(xmlChar* text, int lastisElement, int nextisElement) {
 
 static void printElement(xmlNode* cur) {
     PUTC('<');
-    PUTS(cur->name);
+    PUTPLAIN(cur->name);
     xmlAttr* attr = cur->properties;
     for(;attr;attr=attr->next) {
         PUTC(' ');
-        PUTS(attr->name);
+        PUTPLAIN(attr->name);
         PUTC('=');
         PUTC('"');
+        // escape?
         PUTS(attr->children->content);
         PUTC('"');
     }
@@ -90,7 +193,7 @@ static void printElement(xmlNode* cur) {
                 continue;
             case XML_CDATA_SECTION_NODE:
                 PUTLITERAL("<![CDATA[");
-                PUTS(cur->content);
+                PUTPLAIN(cur->content);
                 PUTLITERAL("]]>");
                 continue;
             default:
@@ -99,7 +202,7 @@ static void printElement(xmlNode* cur) {
             };
         }
         PUTLITERAL("</");
-        PUTS(parent->name);
+        PUTPLAIN(parent->name);
         PUTC('>');
     }
 }
@@ -120,11 +223,12 @@ static void processRoot(xmlNode* root) {
             continue;
         case XML_CDATA_SECTION_NODE:
             PUTLITERAL("<![CDATA[");
-            PUTS(cur->content);
+            PUTPLAIN(cur->content);
             PUTLITERAL("]]>");
             continue;
         case XML_TEXT_NODE:
-            processText(cur->content,
+            processText(cur->doc,
+                    cur->content,
                         lastisElement,
                         cur->next && cur->next->type != XML_TEXT_NODE );
             lastisElement = 0;
