@@ -1,3 +1,5 @@
+#define LIBXML2_NEW_BUFFER
+
 #include <stdio.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -88,31 +90,37 @@
 
 int inParagraph = 0;
 
-void mywrite(const xmlChar* input, ssize_t len, FILE* fp) {
+xmlOutputBufferPtr xout = NULL;
+
+#define PUTLITERAL(literal) xmlOutputBufferWrite(xout,sizeof(literal)-1,literal)
+#define PUTPLAIN(s) xmlOutputBufferWrite(xout,strlen(s),s)
+#define PUTC(c) xmlOutputBufferWrite(xout,1,&c);
+
+void mywrite(const xmlChar* input, ssize_t len) {
     int i;
     for(i=0;i<len;++i) {
         xmlChar c = input[i];
         switch(c) {
             case '<':
-                fwrite("&lt;",1,4,fp);
+                PUTLITERAL("&lt;");
                 break;
             case '>':
-                fwrite("&gt;",1,4,fp);
+                PUTLITERAL("&gt;");
                 break;
             case '&':
-                fwrite("&amp;",1,5,fp);
+                PUTLITERAL("&amp;");
                 break;
             default:
-                fputc(c,fp);
+                PUTC(c);
         };
     }
 }
 
-#define PUTLITERAL(literal) fwrite(literal,1,sizeof(literal)-1,stdout)
-#define PUTPLAIN(s) fwrite(s,1,strlen(s),stdout)
-#define WRITE(s,len) mywrite(s,len,stdout)
+
+#define WRITE(s,len) mywrite(s,len)
 #define PUTS(s) WRITE(s,strlen(s))
-#define PUTC(c) fputc(c,stdout)
+
+#define PUTELEMENT(doc,e) xmlNodeDumpOutput(xout,doc,e,2,1,"utf-8")
 
 static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nextisElement) {
     xmlChar* start = text;
@@ -135,12 +143,12 @@ static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nexti
             }
         } else {
             if(lastisElement) {
-                PUTC('\n');
+                PUTLITERAL("\n");
                 lastisElement = 0;
             }
             if(end==start) {
                 if(end[1]=='\0')
-                    PUTC('\n');
+                    PUTLITERAL("\n");
             } else if(start<end) {
                 if(!inParagraph) {
                     inParagraph = 1;
@@ -159,54 +167,6 @@ static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nexti
     }
 }
 
-static void printElement(xmlNode* cur) {
-    PUTC('<');
-    PUTPLAIN(cur->name);
-    xmlAttr* attr = cur->properties;
-    for(;attr;attr=attr->next) {
-        PUTC(' ');
-        PUTPLAIN(attr->name);
-        PUTC('=');
-        PUTC('"');
-        // escape?
-        PUTS(attr->children->content);
-        PUTC('"');
-    }
-    if(cur->children==NULL) {
-        PUTLITERAL("/>");
-        return;
-    } else {
-        PUTC('>');
-        xmlNode* parent = cur;
-        for(cur = parent->children; cur; cur = cur->next) {
-            switch(cur->type) {
-            case XML_COMMENT_NODE:
-                PUTLITERAL("<!--");
-                PUTS(cur->content);
-                PUTLITERAL("-->\n");
-                continue;
-            case XML_ELEMENT_NODE:
-                printElement(cur);
-                continue;
-            case XML_TEXT_NODE:
-                PUTS(cur->content);
-                continue;
-            case XML_CDATA_SECTION_NODE:
-                PUTLITERAL("<![CDATA[");
-                PUTPLAIN(cur->content);
-                PUTLITERAL("]]>");
-                continue;
-            default:
-                fprintf(stderr,"wtf is %d",cur->type);
-                exit(3);
-            };
-        }
-        PUTLITERAL("</");
-        PUTPLAIN(parent->name);
-        PUTC('>');
-    }
-}
-
 static void processRoot(xmlNode* root) {
     xmlNode* cur;
     int lastisElement = 0;
@@ -218,7 +178,8 @@ static void processRoot(xmlNode* root) {
             PUTLITERAL("-->\n");
             continue;
         case XML_ELEMENT_NODE:
-            printElement(cur);
+            fprintf(stderr,"Pute\n");
+            PUTELEMENT(cur->doc,cur);
             lastisElement = 1;
             continue;
         case XML_CDATA_SECTION_NODE:
@@ -290,6 +251,8 @@ int main(void) {
 
     LIBXML_TEST_VERSION;
 
+    xout = xmlOutputBufferCreateFile(stdout,xmlGetCharEncodingHandler(XML_CHAR_ENCODING_UTF8));
+
     xmlDoc* doc = readFunky();
     assert(doc);
     xmlNode* root = xmlDocGetRootElement(doc);
@@ -325,5 +288,6 @@ int main(void) {
         PUTLITERAL("</p>");
     tryPut(getenv("footer"));
     PUTLITERAL("</body></html>");
+    xmlOutputBufferFlush(xout);
     return 0;
 }
