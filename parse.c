@@ -178,7 +178,6 @@ static void processRoot(xmlNode* root) {
             PUTLITERAL("-->\n");
             continue;
         case XML_ELEMENT_NODE:
-            fprintf(stderr,"Pute\n");
             PUTELEMENT(cur->doc,cur);
             lastisElement = 1;
             continue;
@@ -236,14 +235,14 @@ static void tryPut(const char* maybeFile) {
         for(;;) {
             ssize_t amt = fread(buf,1,0x1000,inp);
             if(amt<=0) break;
-            fwrite(buf,1,amt,stdout);
+            xmlOutputBufferWrite(xout,amt,buf);
         }
         fclose(inp);
     } else {
         // XXX: this is a horrible hack how do
         if(strchr(maybeFile,'\n') == NULL && strchr(maybeFile,'<')==NULL) return;
         // the file doesn't exist, so it must be a text blurb
-        fwrite(maybeFile,1,strlen(maybeFile),stdout);
+        xmlOutputBufferWrite(xout,strlen(maybeFile),maybeFile);
     }
 }
 
