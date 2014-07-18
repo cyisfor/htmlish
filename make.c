@@ -89,4 +89,5 @@ int main(void) {
     setenv("CCARGS","`xml2-config --cflags --libs`",1);
     compile("parse.o","parse.c",NULL);
     linky("parse","parse.o",NULL);
+    return 0;
 }
