@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#include <stdbool.h>
 /* possible states:
  * 1 text+blankline, element = end paragraph in the middle
  * 2 element, blankline+text = start paragraph in the middle
@@ -220,6 +221,15 @@ xmlNode* fuckXPath(xmlNode* parent, const char* name) {
     return NULL;
 }
 
+void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
+    if(strcmp(parent->name,name)==0)
+        handle(parent,ctx);
+    xmlNode* cur = parent->children;
+    for(;cur;cur=cur->next) {
+        foreachNode(cur,name,handle,ctx);
+    }
+}
+
 xmlNode* findOrCreate(xmlNode* parent, const char* path) {
     if(*path == 0)
         return parent;
@@ -240,72 +250,95 @@ xmlNode* findOrCreate(xmlNode* parent, const char* path) {
     return findOrCreate(new,next);
 }
 
-void doByFile(xmlDoc* output, const char* name) {
-    const char* path = getenv(name);
-    xmlNode* target = fuckXPath(xmlDocGetRootElement(output),name);
-    
-    int i,j;
+struct dbfderp {
+    const char* name;
+    const char* path;
+};
 
-    if(!path) {
+static void doByFile2(xmlNode* target, void* ctx) {
+    struct dbfderp* derp = (struct dbfderp*) ctx;
+    if(!derp->path) {
         if(target) {
             xmlUnlinkNode(target);
             xmlFreeNode(target);
         }
     } else {
         if(!target) {
-            fprintf(stderr,"No target found for %s\n",name);
+            fprintf(stderr,"No target found for %s\n",derp->name);
         }
-        parseEnvFile(path,target);
+        parseEnvFile(derp->path,target);
         xmlUnlinkNode(target);
         xmlFreeNode(target);
     }
 }
 
+static void doByFile(xmlDoc* output, const char* name) {
+    const char* path = getenv(name);
+    struct dbfderp derp = { name, path };
+    foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
+}
+
+struct dostylederp {
+    bool hasContents;
+    bool found;
+    xmlNode* style;
+};
+
+void doStyle2(xmlNode* target, void* ctx) {
+    struct dostylederp* derp = (struct dostylederp*)ctx;
+    derp->found = true;
+
+    if(derp->hasContents) {
+        xmlReplaceNode(target,derp->style);
+    } else {
+        xmlUnlinkNode(target);
+        xmlFreeNode(target);
+        return;
+    }
+}
+
 void doStyle(xmlDoc* output) {
     const char* contents = getenv("style");
-    xmlNode* result = fuckXPath(xmlDocGetRootElement(output),"style");
-    xmlNode* style = xmlNewNode(NULL,"link");
-    if(result == NULL) {
+    xmlNode* root = xmlDocGetRootElement(output);
+    struct dostylederp derp = { contents != NULL, false };
+    if(derp.hasContents)
+        derp.style = xmlNewNode(NULL,"link");
+
+    foreachNode(root,"style",doStyle2,&derp);
+    if(!derp.found) { 
         fprintf(stderr,"No styles found\n");
         if(!contents) return;
         xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
         assert(head);
-        xmlAddChild(head,style);
-    } else {
-        if(!contents) {
-            xmlUnlinkNode(result);
-            xmlFreeNode(result);
-            return;
-        }
-        xmlReplaceNode(result,style);
+        xmlAddChild(head,derp.style);
     }
-    xmlSetProp(style,"href",contents);
-    xmlSetProp(style,"rel","stylesheet");
-    xmlSetProp(style,"type","text/css");
+
+    xmlSetProp(derp.style,"href",contents);
+    xmlSetProp(derp.style,"rel","stylesheet");
+    xmlSetProp(derp.style,"type","text/css");
 }
 
+static void doIntitle2(xmlNode* target, void* ctx) {
+    xmlReplaceNode(target,ctx);
+}
+
+void doIntitle(xmlDoc* output, const char* title) {
+    xmlNode* root = xmlDocGetRootElement(output);
+    foreachNode(root,"intitle",doIntitle2,xmlNewText(title));
+}
+    
 void doTitle(xmlDoc* output) {
     const char* contents = getenv("title");
-    if(!contents) {
-        fprintf(stderr,"Warning: you could really do to set a title for this.");
-        return;
-    }
-    xmlNode* title = fuckXPath(xmlDocGetRootElement(output),"title");
-    if(!title) {
-        title = xmlNewNode(NULL,"title");
-        xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
-        assert(head);
-        xmlAddChild(head,title);
-    } 
-    xmlChar* escaped = xmlEncodeSpecialChars(output,contents);
-    xmlNodeSetContent(title,escaped);
-    xmlFree(escaped);
+    xmlNode* root = xmlDocGetRootElement(output);
+
+    foreachNode(root,"title",(void*)xmlAddChild,xmlNewText(contents));
+    doIntitle(output,contents);
 }
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
     "<head><title/><style/><header/></head>\n"
-    "<body><top/><h1/><content/><footer/></body></html>";
+    "<body><h1><intitle/></h1><top/><content/><footer/></body></html>";
 
 int main(void) {
 
@@ -331,11 +364,11 @@ int main(void) {
         output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
 
-    doStyle(output);
-    doTitle(output);
     doByFile(output,"header");
     doByFile(output,"top");
     doByFile(output,"footer");
+    doStyle(output);
+    doTitle(output);
 
     xmlNode* content = fuckXPath(xmlDocGetRootElement(output),"content");
     if(content) {
