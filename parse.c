@@ -309,6 +309,10 @@ const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 
 int main(void) {
 
+    if(getenv("printtemplate")) {
+        puts(defaultTemplate);
+        return 0;
+    }
     LIBXML_TEST_VERSION;
 
     xmlDoc* doc = readFunky(0);
