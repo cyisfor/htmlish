@@ -1,11 +1,13 @@
 #define LIBXML2_NEW_BUFFER
+#define _GNU_SOURCE
 
-#include <stdio.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <libxml/xpath.h>
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
-
+#include <fcntl.h>
 /* possible states:
  * 1 text+blankline, element = end paragraph in the middle
  * 2 element, blankline+text = start paragraph in the middle
@@ -86,43 +88,28 @@
  * second, 
  */
 
-#define BUFSIZE 0x1000
-
 int inParagraph = 0;
+xmlNode* cur = NULL;
 
-xmlOutputBufferPtr xout = NULL;
-
-#define PUTLITERAL(literal) xmlOutputBufferWrite(xout,sizeof(literal)-1,literal)
-#define PUTPLAIN(s) xmlOutputBufferWrite(xout,strlen(s),s)
-#define PUTC(c) xmlOutputBufferWrite(xout,1,&c);
-
-void mywrite(const xmlChar* input, ssize_t len) {
-    int i;
-    for(i=0;i<len;++i) {
-        xmlChar c = input[i];
-        switch(c) {
-            case '<':
-                PUTLITERAL("&lt;");
-                break;
-            case '>':
-                PUTLITERAL("&gt;");
-                break;
-            case '&':
-                PUTLITERAL("&amp;");
-                break;
-            default:
-                PUTC(c);
-        };
+static void maybeStartParagraph(void) {
+    if(!inParagraph) {
+        inParagraph = 1;
+        xmlNode* next = xmlNewNode(NULL,"p");
+        xmlAddNextSibling(cur,next);
+        cur = next;
     }
 }
 
+static void maybeEndParagraph(void) {
+    if(inParagraph) {
+        xmlNode* next = xmlNewText("");
+        xmlAddNextSibling(cur,next);
+        cur = next;
+        inParagraph = 0;
+    }
+}
 
-#define WRITE(s,len) mywrite(s,len)
-#define PUTS(s) WRITE(s,strlen(s))
-
-#define PUTELEMENT(doc,e) xmlNodeDumpOutput(xout,doc,e,2,1,"utf-8")
-
-static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nextisElement) {
+static void processText(xmlChar* text, int lastisElement, int nextisElement) {
     xmlChar* start = text;
     xmlChar* end = start;
     int first = 1;
@@ -130,36 +117,21 @@ static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nexti
         end = strchr(start,'\n');
         if(end==NULL) {
             if(strlen(start)>0) {
-                if(!inParagraph) {
-                    inParagraph = 1;
-                    PUTLITERAL("<p>");
-                }
+                maybeStartParagraph();
                 first = 0;
-                PUTS(start);
-                if(!nextisElement && inParagraph) {
-                    inParagraph = 0;
-                    PUTLITERAL("</p>");
-                }
+                xmlNodeAddContent(cur,start);
+                if(!nextisElement)
+                    maybeEndParagraph();
             }
         } else {
             if(lastisElement) {
-                PUTLITERAL("\n");
                 lastisElement = 0;
             }
-            if(end==start) {
-                if(end[1]=='\0')
-                    PUTLITERAL("\n");
-            } else if(start<end) {
-                if(!inParagraph) {
-                    inParagraph = 1;
-                    PUTLITERAL("<p>");
-                }
+            if(start<end) {
+                maybeStartParagraph();
                 first = 0;
-                WRITE(start,end-start);
-                if(inParagraph) {
-                    inParagraph = 0;
-                    PUTLITERAL("</p>");
-                }
+                xmlNodeAddContentLen(cur,start,end-start);
+                maybeEndParagraph();
             }
             start = end+1;
             end = start;
@@ -168,34 +140,22 @@ static void processText(xmlDoc* doc, xmlChar* text, int lastisElement, int nexti
 }
 
 static void processRoot(xmlNode* root) {
-    xmlNode* cur;
+    xmlNode* e;
     int lastisElement = 0;
-    for(cur=root->children;cur;cur = cur->next) {
-        switch(cur->type) {
-        case XML_COMMENT_NODE:
-            PUTLITERAL("<!--");
-            PUTS(cur->content);
-            PUTLITERAL("-->\n");
-            continue;
-        case XML_ELEMENT_NODE:
-            PUTELEMENT(cur->doc,cur);
-            lastisElement = 1;
-            continue;
-        case XML_CDATA_SECTION_NODE:
-            PUTLITERAL("<![CDATA[");
-            PUTPLAIN(cur->content);
-            PUTLITERAL("]]>");
-            continue;
+    for(e=root->children;e;e = e->next) {
+        switch(e->type) {
         case XML_TEXT_NODE:
-            processText(cur->doc,
-                    cur->content,
+            processText(
+                    e->content,
                         lastisElement,
-                        cur->next && cur->next->type != XML_TEXT_NODE );
+                        e->next && e->next->type != XML_TEXT_NODE );
             lastisElement = 0;
             continue;
+        case XML_ELEMENT_NODE:
+            lastisElement = 1;
         default:
-            fprintf(stderr,"wwtf is %d",cur->type);
-            exit(3);
+            xmlAddNextSibling(cur,e);
+            cur = e;
         };
     }
 }
@@ -203,7 +163,8 @@ static void processRoot(xmlNode* root) {
 #define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>"
 #define FOOTER "</root>"
 
-xmlDoc* readFunky(void) {
+#define BUFSIZE 0x1000
+xmlDoc* readFunky(int fd) {
     xmlParserCtxtPtr ctx;
     char buf[BUFSIZE];
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
@@ -212,7 +173,7 @@ xmlDoc* readFunky(void) {
 
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
     for(;;) {
-        ssize_t amt = read(0,buf,BUFSIZE);
+        ssize_t amt = read(fd,buf,BUFSIZE);
         if(amt<=0) break;
         xmlParseChunk(ctx, buf, amt, 0);
     }
@@ -226,67 +187,174 @@ xmlDoc* readFunky(void) {
     return doc;
 }
 
-static void tryPut(const char* maybeFile) {
-    if(!maybeFile) return;
+static void parseEnvFile(const char* path, xmlNode* last) {
+    int inp = open(path,O_RDONLY);
+    assert(inp >= 0);
+    xmlDoc* doc = readFunky(inp);
+    close(inp);
+    if(!doc) {
+        fprintf(stderr,"Couldn't parse %s",path);            
+        exit(5);
+    }
+    xmlNode* root = xmlDocGetRootElement(doc);
+    xmlNode* cur = root;
+    while(cur) {
+        xmlNode* next = cur->next;
+        xmlAddNextSibling(last,cur);
+        // add siblings after the element passed to the function, and then after the sibling added.
+        last = cur;
+        cur = next;
+    }
+    xmlFreeDoc(doc);
+}
 
-    FILE* inp = fopen(maybeFile,"rt");
-    if(inp) {
-        char buf[0x1000];
-        for(;;) {
-            ssize_t amt = fread(buf,1,0x1000,inp);
-            if(amt<=0) break;
-            xmlOutputBufferWrite(xout,amt,buf);
+xmlNode* fuckXPath(xmlNode* parent, const char* name) {
+    if(strcmp(parent->name,name)==0)
+        return parent;
+    xmlNode* cur = parent->children;
+    for(;cur;cur=cur->next) {
+        xmlNode* ret = fuckXPath(cur,name);
+        if(ret)
+            return ret;
+    }
+    return NULL;
+}
+
+xmlNode* findOrCreate(xmlNode* parent, const char* path) {
+    if(*path == 0)
+        return parent;
+
+    const char* next = strchrnul(path,'/');
+    xmlNode* cur = parent->children;
+    for(;cur;cur = cur->next) {
+        if(0==memcmp(cur->name,path,next-path)) {
+            return findOrCreate(cur,next);
         }
-        fclose(inp);
+    }
+
+    static char name[0x100];
+    memcpy(name,path,next-path);
+    name[next-path] = 0;
+    xmlNode* new = xmlNewNode(NULL,name);
+    xmlAddChild(parent,new);
+    return findOrCreate(new,next);
+}
+
+void doByFile(xmlDoc* output, const char* name) {
+    const char* path = getenv(name);
+    xmlNode* target = fuckXPath(xmlDocGetRootElement(output),name);
+    
+    int i,j;
+
+    if(!path) {
+        if(target) {
+            xmlUnlinkNode(target);
+            xmlFreeNode(target);
+        }
     } else {
-        // XXX: this is a horrible hack how do
-        if(strchr(maybeFile,'\n') == NULL && strchr(maybeFile,'<')==NULL) return;
-        // the file doesn't exist, so it must be a text blurb
-        xmlOutputBufferWrite(xout,strlen(maybeFile),maybeFile);
+        if(!target) {
+            fprintf(stderr,"No target found for %s\n",name);
+        }
+        parseEnvFile(path,target);
+        xmlUnlinkNode(target);
+        xmlFreeNode(target);
     }
 }
+
+void doStyle(xmlDoc* output) {
+    const char* contents = getenv("style");
+    xmlNode* result = fuckXPath(xmlDocGetRootElement(output),"style");
+    xmlNode* style = xmlNewNode(NULL,"link");
+    if(result == NULL) {
+        fprintf(stderr,"No styles found\n");
+        if(!contents) return;
+        xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
+        assert(head);
+        xmlAddChild(head,style);
+    } else {
+        if(!contents) {
+            xmlUnlinkNode(result);
+            xmlFreeNode(result);
+            return;
+        }
+        xmlReplaceNode(result,style);
+    }
+    xmlSetProp(style,"href",contents);
+    xmlSetProp(style,"rel","stylesheet");
+    xmlSetProp(style,"type","text/css");
+}
+
+void doTitle(xmlDoc* output) {
+    const char* contents = getenv("title");
+    if(!contents) {
+        fprintf(stderr,"Warning: you could really do to set a title for this.");
+        return;
+    }
+    xmlNode* title = fuckXPath(xmlDocGetRootElement(output),"title");
+    if(!title) {
+        title = xmlNewNode(NULL,"title");
+        xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
+        assert(head);
+        xmlAddChild(head,title);
+    } 
+    xmlChar* escaped = xmlEncodeSpecialChars(output,contents);
+    xmlNodeSetContent(title,escaped);
+    xmlFree(escaped);
+}
+
+const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+    "<head><title/><style/><header/></head>\n"
+    "<body><top/><h1/><content/><footer/></body></html>";
 
 int main(void) {
 
     LIBXML_TEST_VERSION;
 
-    xout = xmlOutputBufferCreateFile(stdout,xmlGetCharEncodingHandler(XML_CHAR_ENCODING_UTF8));
-
-    xmlDoc* doc = readFunky();
+    xmlDoc* doc = readFunky(0);
     assert(doc);
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
-    xmlNode* cur = root;
-    PUTLITERAL("<?xml version=\"1.0\"?>\n"
-        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-         "<html lang=\"en\" xml:lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-         "<head>\n"
-         "<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />");
-    const char* title = getenv("title");
-    if(title) {
-        PUTLITERAL("<title>");
-        PUTS(title);
-        PUTLITERAL("</title>\n");
+
+    xmlDoc* output;
+    if(getenv("template")) {
+        output = xmlParseFile(getenv("template"));
+        if(!output) {
+            fprintf(stderr,"Error: template failed... not sure if well formed or not.\n");
+            exit(2);
+        }
+    } else {
+        output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
-    const char* style = getenv("style");
-    if(style) {
-        PUTLITERAL("<link rel=\"stylesheet\" href=\"");
-        PUTS(style);
-        PUTLITERAL("\" />");
+
+    doStyle(output);
+    doTitle(output);
+    doByFile(output,"header");
+    doByFile(output,"top");
+    doByFile(output,"footer");
+
+    xmlNode* content = fuckXPath(xmlDocGetRootElement(output),"content");
+    if(content) {
+        xmlNode* text = content->prev;
+        if(text) {
+            xmlUnlinkNode(content);
+            xmlFreeNode(content);
+            content = text;
+        } else {
+            text = xmlNewText("");
+            xmlReplaceNode(content,text);
+            xmlFreeNode(content);
+            content = text;
+        }
+    } else {
+        xmlNode* body = findOrCreate(xmlDocGetRootElement(output),"body");
+        assert(body != NULL);
+        content = body->children;
     }
-    tryPut(getenv("head"));
-    PUTLITERAL("</head><body>");
-    tryPut(getenv("top"));
-    if(title) {
-        PUTLITERAL("<h1>");
-        PUTS(title);
-        PUTLITERAL("</h1>\n");
-    }
+
+    cur = content;
     processRoot(root);
-    if(inParagraph)
-        PUTLITERAL("</p>");
-    tryPut(getenv("footer"));
-    PUTLITERAL("</body></html>");
-    xmlOutputBufferFlush(xout);
+
+    xmlSaveFile("-",output);
     return 0;
 }
