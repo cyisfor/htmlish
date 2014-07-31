@@ -1,4 +1,4 @@
-all: make
-	exec ./make
-make: make.c
-	gcc -o $@ $^
+all: parse
+
+parse: parse.c
+	gcc $(CFLAGS) -g `xml2-config --cflags --libs` -o $@ $^

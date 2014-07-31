@@ -9,6 +9,17 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdbool.h>
+
+/* if a line is blank, a paragraph follows, or a block element.
+ * so, after processText, if it ends in \n, set a flag to check the next element.
+ * when the next element is a text node, or like <u> or an <i>, start a paragraph, 
+ * then add it to the paragraph.
+ * when it's a <blockquote> or an <ul> add it without starting a paragraph.
+ *
+ * If a line is blank, a paragraph ends. So if the text node ends in \n\n, end the paragraph before
+ * doing the above. Any \n in the text node respectively ends, and starts a paragraph.
+ */
+
 /* possible states:
  * 1 text+blankline, element = end paragraph in the middle
  * 2 element, blankline+text = start paragraph in the middle
@@ -89,75 +100,127 @@
  * second, 
  */
 
-int inParagraph = 0;
-xmlNode* cur = NULL;
+struct ishctx {
+    xmlNode* e;
+    bool inParagraph;
+    bool endedNewline;
+};
 
-static void maybeStartParagraph(void) {
-    if(!inParagraph) {
-        inParagraph = 1;
-        xmlNode* next = xmlNewNode(NULL,"p");
-        xmlAddNextSibling(cur,next);
-        cur = next;
+xmlNode* currentAdderThingy = NULL;
+
+static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
+    if(ctx->inParagraph) {
+        xmlAddChild(ctx->e,thingy);
+    } else {
+        xmlAddNextSibling(ctx->e,thingy);
+        ctx->e = thingy;
     }
 }
 
-static void maybeEndParagraph(void) {
-    if(inParagraph) {
-        xmlNode* next = xmlNewText("");
-        xmlAddNextSibling(cur,next);
-        cur = next;
-        inParagraph = 0;
+static void maybeStartParagraph(struct ishctx* ctx) {
+    if(!ctx->inParagraph) {
+        xmlNodeAddContentLen(ctx->e,"\n",1);
+        newthingy(ctx,xmlNewNode(NULL,"p"));
+        xmlNodeAddContentLen(ctx->e,"\n",1);
+        ctx->inParagraph = true;
     }
 }
 
-static void processText(xmlChar* text, int lastisElement, int nextisElement) {
+static void maybeEndParagraph(struct ishctx* ctx) {
+    if(ctx->inParagraph) {
+        ctx->inParagraph = false;
+    }
+}
+
+static void processText(struct ishctx* ctx, xmlChar* text) {
+    if(!*text) return;
+
     xmlChar* start = text;
     xmlChar* end = start;
-    int first = 1;
-    while(end) {
-        end = strchr(start,'\n');
-        if(end==NULL) {
-            if(strlen(start)>0) {
-                maybeStartParagraph();
-                first = 0;
-                xmlNodeAddContent(cur,start);
-                if(!nextisElement)
-                    maybeEndParagraph();
+    bool first = true;
+    if(*start == '\n') {
+        // starts blank, so be sure to start a new paragraph.
+        maybeEndParagraph(ctx);
+    }
+
+    for(;;) {
+        end = strchrnul(start,'\n');
+        if(*end == 0) {
+            if(*start != 0 && !isspace(*start)) {
+                maybeStartParagraph(ctx);
+                // no newlines between start and nul. Just leave it in the current paragraph!
+                xmlNodeAddContentLen(ctx->e,start,end-start);
             }
-        } else {
-            if(lastisElement) {
-                lastisElement = 0;
+            return;
+        } 
+            
+        if(start!=end) {
+            // only start a paragraph once we're sure we got something to put in it.
+            xmlChar* c;
+            for(c=start;c!=end;++c) {
+                if(!isspace(*c)) {
+                    printf("naspace %c\n",*c);
+                    //only add a paragraph if it isn't ALL spaces
+                    maybeStartParagraph(ctx);
+                    first = false;
+                    xmlNodeAddContentLen(ctx->e,start,end-start);
+                    maybeEndParagraph(ctx);
+                    break;
+                }
             }
-            if(start<end) {
-                maybeStartParagraph();
-                first = 0;
-                xmlNodeAddContentLen(cur,start,end-start);
-                maybeEndParagraph();
-            }
-            start = end+1;
-            end = start;
+            // there's more to the text node we know, because end is at \n not \0
         }
+
+        if(*(end + 1) == '\0') {
+            ctx->endedNewline = true;
+            maybeEndParagraph(ctx);
+            // always end a paragraph on a newline ending, but not if there's no newline
+            // since "blah <i>blah</i> blah" shouldn't be two paragraphs.
+            // save the ended newline state to check the next e
+            return;
+        }
+        start = end+1;
     }
 }
 
-static void processRoot(xmlNode* root) {
-    xmlNode* e;
-    int lastisElement = 0;
-    for(e=root->children;e;e = e->next) {
+#define LITCMP(a,l) strncmp(a,l,sizeof(l))
+
+static void processRoot(struct ishctx* ctx, xmlNode* root) {
+    xmlNode* e = root->children;
+    while(e) {
+        xmlNode* next = e->next;
         switch(e->type) {
         case XML_TEXT_NODE:
             processText(
-                    e->content,
-                        lastisElement,
-                        e->next && e->next->type != XML_TEXT_NODE );
-            lastisElement = 0;
-            continue;
+                    ctx,
+                    e->content);
+            break;
         case XML_ELEMENT_NODE:
-            lastisElement = 1;
+            { bool blockElement = 
+                        0 == LITCMP(e->name,"ul") ||
+                        0 == LITCMP(e->name,"ol") ||
+                        0 == LITCMP(e->name,"p") || // inception
+                        0 == LITCMP(e->name,"div") ||
+                        0 == LITCMP(e->name,"table") ||
+                        0 == LITCMP(e->name,"blockquote");
+                if(blockElement) {
+                    // no need to start (or have) a paragraph. This element is huge.
+                    maybeEndParagraph(ctx); //XXX: let block elements stay inside a paragraph if on same line?
+                } else {
+                    //start a paragraph if this element is a wimp
+                    //but only if the last text node ended on a newline.
+                    //otherwise the last text node and this should be in the same
+                    //paragraph
+                    if(ctx->endedNewline) { 
+                        maybeEndParagraph(ctx);
+                        ctx->endedNewline = false;
+                    }
+                }
+            }
         default:
-            xmlAddNextSibling(cur,e);
-            cur = e;
+            newthingy(ctx,e);
         };
+        e = next;
     }
 }
 
@@ -187,8 +250,9 @@ xmlDoc* readFunky(int fd) {
     xmlFreeParserCtxt(ctx);
     return doc;
 }
+static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
+    if(!path) return;
 
-static void parseEnvFile(const char* path, xmlNode* last) {
     int inp = open(path,O_RDONLY);
     assert(inp >= 0);
     xmlDoc* doc = readFunky(inp);
@@ -199,11 +263,17 @@ static void parseEnvFile(const char* path, xmlNode* last) {
     }
     xmlNode* root = xmlDocGetRootElement(doc);
     xmlNode* cur = root;
-    while(cur) {
+    nodes->nodeNr = 0;
+    for(;cur;cur = cur->next) {
+        ++nodes->nodeNr;
+    }
+    nodes->nodeTab = malloc(sizeof(xmlNode*)*nodes->nodeNr);
+    cur = root;
+    int i = 0;
+    for(;cur;++i) {
         xmlNode* next = cur->next;
-        xmlAddNextSibling(last,cur);
-        // add siblings after the element passed to the function, and then after the sibling added.
-        last = cur;
+        nodes->nodeTab[i] = cur;
+        xmlUnlinkNode(cur);
         cur = next;
     }
     xmlFreeDoc(doc);
@@ -222,11 +292,14 @@ xmlNode* fuckXPath(xmlNode* parent, const char* name) {
 }
 
 void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
+    fprintf(stderr,"got node %s\n",parent->name);
     if(strcmp(parent->name,name)==0)
         handle(parent,ctx);
     xmlNode* cur = parent->children;
-    for(;cur;cur=cur->next) {
+    while(cur) {
+        xmlNode* next = cur->next;
         foreachNode(cur,name,handle,ctx);
+        cur = next;
     }
 }
 
@@ -253,6 +326,7 @@ xmlNode* findOrCreate(xmlNode* parent, const char* path) {
 struct dbfderp {
     const char* name;
     const char* path;
+    xmlNodeSet replacement;
 };
 
 static void doByFile2(xmlNode* target, void* ctx) {
@@ -266,7 +340,13 @@ static void doByFile2(xmlNode* target, void* ctx) {
         if(!target) {
             fprintf(stderr,"No target found for %s\n",derp->name);
         }
-        parseEnvFile(derp->path,target);
+        xmlNode* cur = target;
+        int i = 0;
+        for(;i<derp->replacement.nodeNr;++i) {
+            xmlNode* new = xmlCopyNode(derp->replacement.nodeTab[i],1);
+            xmlAddNextSibling(cur,new);
+            cur = new;
+        }
         xmlUnlinkNode(target);
         xmlFreeNode(target);
     }
@@ -275,34 +355,40 @@ static void doByFile2(xmlNode* target, void* ctx) {
 static void doByFile(xmlDoc* output, const char* name) {
     const char* path = getenv(name);
     struct dbfderp derp = { name, path };
+    parseEnvFile(derp.path,&derp.replacement);
     foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
 }
 
 struct dostylederp {
     bool hasContents;
     bool found;
-    xmlNode* style;
+    const char* url;
 };
+
+xmlNode* createStyle(struct dostylederp* derp) {
+    xmlNode* style = xmlNewNode(NULL,"link");
+    xmlSetProp(style,"href",derp->url);
+    xmlSetProp(style,"rel","stylesheet");
+    xmlSetProp(style,"type","text/css");
+    return style;
+}
 
 void doStyle2(xmlNode* target, void* ctx) {
     struct dostylederp* derp = (struct dostylederp*)ctx;
     derp->found = true;
 
     if(derp->hasContents) {
-        xmlReplaceNode(target,derp->style);
+        xmlReplaceNode(target,createStyle(derp));
     } else {
         xmlUnlinkNode(target);
-        xmlFreeNode(target);
-        return;
     }
+    xmlFreeNode(target);
 }
 
 void doStyle(xmlDoc* output) {
     const char* contents = getenv("style");
     xmlNode* root = xmlDocGetRootElement(output);
-    struct dostylederp derp = { contents != NULL, false };
-    if(derp.hasContents)
-        derp.style = xmlNewNode(NULL,"link");
+    struct dostylederp derp = { contents != NULL, false, contents };
 
     foreachNode(root,"style",doStyle2,&derp);
     if(!derp.found) { 
@@ -310,29 +396,50 @@ void doStyle(xmlDoc* output) {
         if(!contents) return;
         xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
         assert(head);
-        xmlAddChild(head,derp.style);
+        xmlAddChild(head,createStyle(&derp));
     }
-
-    xmlSetProp(derp.style,"href",contents);
-    xmlSetProp(derp.style,"rel","stylesheet");
-    xmlSetProp(derp.style,"type","text/css");
 }
 
 static void doIntitle2(xmlNode* target, void* ctx) {
-    xmlReplaceNode(target,ctx);
+    xmlReplaceNode(target,xmlNewText(ctx));
 }
 
 void doIntitle(xmlDoc* output, const char* title) {
     xmlNode* root = xmlDocGetRootElement(output);
-    foreachNode(root,"intitle",doIntitle2,xmlNewText(title));
+    foreachNode(root,"intitle",doIntitle2,(void*)title);
 }
+
+struct titleseeker {
+    char* title;
+};
     
+static void eliminateTitles(xmlNode* target, void* ctx) {
+    struct titleseeker* ts = (struct titleseeker*) ctx;
+    fprintf(stderr,"Eliminate! %p\n",target);
+    if(ts->title == NULL && target->children) {
+        const char* title = target->children[0].content;
+        fprintf(stderr,"Setting boop %s\n",title);
+        ts->title = strdup(title);
+    }
+    xmlUnlinkNode(target);
+    //xmlFreeNode(target);
+}
 void doTitle(xmlDoc* output) {
     const char* contents = getenv("title");
     xmlNode* root = xmlDocGetRootElement(output);
 
-    foreachNode(root,"title",(void*)xmlAddChild,xmlNewText(contents));
-    doIntitle(output,contents);
+    struct titleseeker ts;
+    ts.title = NULL;
+    assert(ts.title == NULL);
+
+    // this allows setting the title inline anywhere via a <title> tag.
+    foreachNode(root,"title",eliminateTitles,(void*)&ts);
+
+    xmlNode* title = findOrCreate(findOrCreate(root,"head"),"title");    
+    xmlAddChild(title,xmlNewText(contents ? contents : ts.title));
+
+    doIntitle(output,contents ? contents :  ts.title);
+    free(ts.title);
 }
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -350,8 +457,6 @@ int main(void) {
 
     xmlDoc* doc = readFunky(0);
     assert(doc);
-    xmlNode* root = xmlDocGetRootElement(doc);
-    assert(root);
 
     xmlDoc* output;
     if(getenv("template")) {
@@ -363,35 +468,33 @@ int main(void) {
     } else {
         output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
-
-    doByFile(output,"header");
-    doByFile(output,"top");
-    doByFile(output,"footer");
-    doStyle(output);
-    doTitle(output);
-
     xmlNode* content = fuckXPath(xmlDocGetRootElement(output),"content");
     if(content) {
-        xmlNode* text = content->prev;
-        if(text) {
-            xmlUnlinkNode(content);
-            xmlFreeNode(content);
-            content = text;
-        } else {
-            text = xmlNewText("");
-            xmlReplaceNode(content,text);
-            xmlFreeNode(content);
-            content = text;
-        }
+        xmlNode* text = xmlNewText("");
+        xmlReplaceNode(content,text);
+        xmlFreeNode(content);
+        content = text;
     } else {
         xmlNode* body = findOrCreate(xmlDocGetRootElement(output),"body");
         assert(body != NULL);
         content = body->children;
     }
+    struct ishctx ctx = {
+        .endedNewline = true,
+        .e = content
+    };
+    xmlNode* root = xmlDocGetRootElement(doc);
+    assert(root);
+    processRoot(&ctx,root);
 
-    cur = content;
-    processRoot(root);
+    doByFile(output,"header");
+    doByFile(output,"top");
+    doByFile(output,"footer");
+    puts("beep");
+    doTitle(output);
+    puts("boop");
+    doStyle(output);
 
-    xmlSaveFile("-",output);
+    xmlSaveFormatFile("-",output,1);
     return 0;
 }
