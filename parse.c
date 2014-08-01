@@ -218,7 +218,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                 }
             }
         default:
-            newthingy(ctx,e);
+            newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
         e = next;
     }
@@ -343,7 +343,7 @@ static void doByFile2(xmlNode* target, void* ctx) {
         xmlNode* cur = target;
         int i = 0;
         for(;i<derp->replacement.nodeNr;++i) {
-            xmlNode* new = xmlCopyNode(derp->replacement.nodeTab[i],1);
+            xmlNode* new = xmlDocCopyNode(derp->replacement.nodeTab[i],cur->doc,1);
             xmlAddNextSibling(cur,new);
             cur = new;
         }
@@ -382,7 +382,7 @@ void doStyle2(xmlNode* target, void* ctx) {
     } else {
         xmlUnlinkNode(target);
     }
-    xmlFreeNode(target);
+    // xmlFreeNode(target);
 }
 
 void doStyle(xmlDoc* output) {
