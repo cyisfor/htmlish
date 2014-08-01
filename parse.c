@@ -373,9 +373,10 @@ static void doByFile(xmlDoc* output, const char* name) {
 }
 
 struct dostylederp {
-    bool hasContents;
-    bool found;
     const char* url;
+    bool hasContents;
+    bool needFree;
+    bool found;
 };
 
 xmlNode* createStyle(struct dostylederp* derp) {
@@ -384,6 +385,16 @@ xmlNode* createStyle(struct dostylederp* derp) {
     xmlSetProp(style,"rel","stylesheet");
     xmlSetProp(style,"type","text/css");
     return style;
+}
+
+static void findStyle(xmlNode* target, void* ctx) {
+    struct dostylederp* derp = (struct dostylederp*)ctx;
+    if(!derp->hasContents) {
+        derp->hasContents = true;
+        derp->url = strdup(target->children[0].content);
+        derp->needFree = true;
+    }
+    xmlUnlinkNode(target);
 }
 
 void doStyle2(xmlNode* target, void* ctx) {
@@ -400,17 +411,24 @@ void doStyle2(xmlNode* target, void* ctx) {
 
 void doStyle(xmlDoc* output) {
     const char* contents = getenv("style");
+    struct dostylederp derp = { contents, contents != NULL, false, false };
     xmlNode* root = xmlDocGetRootElement(output);
-    struct dostylederp derp = { contents != NULL, false, contents };
+    if(!derp.hasContents) {
+        foreachNode(root,"stylesheet",findStyle,&derp);
+        // if(!derp.hasContents) whocares();
+    }
 
     foreachNode(root,"style",doStyle2,&derp);
-    if(!derp.found) { 
-        fprintf(stderr,"No styles found\n");
-        if(!contents) return;
+
+    if(derp.hasContents && !derp.found) {
+        // we have a style sheet, but no place in the template to put the link.
+
         xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
         assert(head);
         xmlAddChild(head,createStyle(&derp));
     }
+    if(derp.needFree) 
+        free((char*)derp.url);
 }
 
 static void doIntitle2(xmlNode* target, void* ctx) {
