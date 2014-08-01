@@ -198,6 +198,10 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
         xmlNode* next = e->next;
         switch(e->type) {
         case XML_TEXT_NODE:
+            // if this is a text node, it doesn't matter whether the previous text node
+            // ended in a newline or not. The important thing is to know whether THIS
+            // text node ended in a newline or not.
+            ctx->endedNewline = false;
             processText(
                     ctx,
                     e->content);
@@ -220,6 +224,8 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     //paragraph
                     if(ctx->endedNewline) { 
                         maybeEndParagraph(ctx);
+                        // make sure this wimp is in the paragraph, not before it.
+                        maybeStartParagraph(ctx);
                         ctx->endedNewline = false;
                     }
                 }
