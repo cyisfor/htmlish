@@ -146,10 +146,17 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
     for(;;) {
         end = strchrnul(start,'\n');
         if(*end == 0) {
-            if(*start != 0 && !isspace(*start)) {
-                maybeStartParagraph(ctx);
-                // no newlines between start and nul. Just leave it in the current paragraph!
-                xmlNodeAddContentLen(ctx->e,start,end-start);
+            if(*start != 0) {                 
+                // only start a paragraph once we're sure we got something to put in it.
+                xmlChar* c;
+                for(c=start;c!=end;++c) {
+                    if(!isspace(*c)) {
+                        maybeStartParagraph(ctx);
+                        // no newlines between start and nul. Just leave it in the current paragraph!
+                        xmlNodeAddContentLen(ctx->e,start,end-start);
+                        break;
+                    }
+                }
             }
             return;
         } 
