@@ -117,17 +117,19 @@ static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
     }
 }
 
-static void maybeStartParagraph(struct ishctx* ctx) {
+static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
     if(!ctx->inParagraph) {
         xmlNodeAddContentLen(ctx->e,"\n",1);
         newthingy(ctx,xmlNewNode(NULL,"p"));
+        //xmlSetProp(ctx->e,"where",where);
         xmlNodeAddContentLen(ctx->e,"\n",1);
         ctx->inParagraph = true;
     }
 }
 
-static void maybeEndParagraph(struct ishctx* ctx) {
+static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     if(ctx->inParagraph) {
+        //xmlAddChild(ctx->e,xmlNewComment(where));
         ctx->inParagraph = false;
     }
 }
@@ -140,7 +142,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
     bool first = true;
     if(*start == '\n') {
         // starts blank, so be sure to start a new paragraph.
-        maybeEndParagraph(ctx);
+        maybeEndParagraph(ctx,"start");
     }
 
     for(;;) {
@@ -151,7 +153,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                 xmlChar* c;
                 for(c=start;c!=end;++c) {
                     if(!isspace(*c)) {
-                        maybeStartParagraph(ctx);
+                        maybeStartParagraph(ctx,"beginning");
                         // no newlines between start and nul. Just leave it in the current paragraph!
                         xmlNodeAddContentLen(ctx->e,start,end-start);
                         break;
@@ -168,10 +170,10 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                 if(!isspace(*c)) {
                     printf("naspace %c\n",*c);
                     //only add a paragraph if it isn't ALL spaces
-                    maybeStartParagraph(ctx);
+                    maybeStartParagraph(ctx,"middle");
                     first = false;
                     xmlNodeAddContentLen(ctx->e,start,end-start);
-                    maybeEndParagraph(ctx);
+                    maybeEndParagraph(ctx,"middle");
                     break;
                 }
             }
@@ -180,7 +182,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
 
         if(*(end + 1) == '\0') {
             ctx->endedNewline = true;
-            maybeEndParagraph(ctx);
+            maybeEndParagraph(ctx,"final");
             // always end a paragraph on a newline ending, but not if there's no newline
             // since "blah <i>blah</i> blah" shouldn't be two paragraphs.
             // save the ended newline state to check the next e
@@ -216,16 +218,16 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                         0 == LITCMP(e->name,"blockquote");
                 if(blockElement) {
                     // no need to start (or have) a paragraph. This element is huge.
-                    maybeEndParagraph(ctx); //XXX: let block elements stay inside a paragraph if on same line?
+                    maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
                 } else {
                     //start a paragraph if this element is a wimp
                     //but only if the last text node ended on a newline.
                     //otherwise the last text node and this should be in the same
                     //paragraph
                     if(ctx->endedNewline) { 
-                        maybeEndParagraph(ctx);
+                        maybeEndParagraph(ctx,"wimp");
                         // make sure this wimp is in the paragraph, not before it.
-                        maybeStartParagraph(ctx);
+                        maybeStartParagraph(ctx,"wimp");
                         ctx->endedNewline = false;
                     }
                 }
