@@ -306,14 +306,14 @@ xmlNode* fuckXPath(xmlNode* parent, const char* name) {
 }
 
 xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
-    if(strcmp(parent->name,"div")==0)
-        return parent;
-    const char* test = xmlGetProp(parent,"id");
-    if(test && strcmp(test,id) == 0)
-        return parent;
+    if(strcmp(parent->name,"div")==0) {
+        const char* test = xmlGetProp(parent,"id");
+        if(test && strcmp(test,id) == 0)
+            return parent;
+    }
     xmlNode* cur = parent->children;
     for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPath(cur,id);
+        xmlNode* ret = fuckXPathDivId(cur,id);
         if(ret)
             return ret;
     }
@@ -462,7 +462,6 @@ static void eliminateTitles(xmlNode* target, void* ctx) {
     struct titleseeker* ts = (struct titleseeker*) ctx;
     if(ts->title == NULL && target->children) {
         const char* title = target->children[0].content;
-        fprintf(stderr,"Setting boop %s\n",title);
         ts->title = strdup(title);
     }
     xmlUnlinkNode(target);
@@ -479,10 +478,12 @@ void doTitle(xmlDoc* output) {
     // this allows setting the title inline anywhere via a <title> tag.
     foreachNode(root,"title",eliminateTitles,(void*)&ts);
 
+    assert(contents || ts.title);
+
     xmlNode* title = findOrCreate(findOrCreate(root,"head"),"title");    
     xmlAddChild(title,xmlNewText(contents ? contents : ts.title));
 
-    doIntitle(output,contents ? contents :  ts.title);
+    doIntitle(output,ts.title ? ts.title : contents);
     free(ts.title);
 }
 
@@ -521,11 +522,16 @@ int main(void) {
         content = text;
     } else {
         content = fuckXPathDivId(oroot,"content");
+
         if(content) {
-            fprintf(stderr,"Found div content!\n");
-            exit(23);
-        }
-        if(content == NULL) {
+            if(content->children == NULL) {
+                xmlNode* text = xmlNewTextLen("",0);
+                assert(text);
+                xmlAddChild(content,text);                
+            }
+            content = content->children;
+            assert(content);
+        } else {
             xmlNode* body = findOrCreate(oroot,"body");
             assert(body != NULL);
             content = body->children;
