@@ -305,15 +305,15 @@ xmlNode* fuckXPath(xmlNode* parent, const char* name) {
     return NULL;
 }
 
-xmlNode* fuckXPathDivID(xmlNode* parent, const char* id) {
+xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
     if(strcmp(parent->name,"div")==0)
         return parent;
     const char* test = xmlGetProp(parent,"id");
-    if(test and strcmp(test,id) == 0)
+    if(test && strcmp(test,id) == 0)
         return parent;
     xmlNode* cur = parent->children;
     for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPath(cur,name);
+        xmlNode* ret = fuckXPath(cur,id);
         if(ret)
             return ret;
     }
@@ -512,16 +512,24 @@ int main(void) {
     } else {
         output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
-    xmlNode* content = fuckXPath(xmlDocGetRootElement(output),"content");
+    xmlNode* oroot = xmlDocGetRootElement(output);
+    xmlNode* content = fuckXPath(oroot,"content");
     if(content) {
         xmlNode* text = xmlNewText("");
         xmlReplaceNode(content,text);
         xmlFreeNode(content);
         content = text;
     } else {
-        xmlNode* body = findOrCreate(xmlDocGetRootElement(output),"body");
-        assert(body != NULL);
-        content = body->children;
+        content = fuckXPathDivId(oroot,"content");
+        if(content) {
+            fprintf(stderr,"Found div content!\n");
+            exit(23);
+        }
+        if(content == NULL) {
+            xmlNode* body = findOrCreate(oroot,"body");
+            assert(body != NULL);
+            content = body->children;
+        }
     }
     struct ishctx ctx = {
         .endedNewline = false,
