@@ -480,8 +480,8 @@ void doTitle(xmlDoc* output) {
 
     assert(contents || ts.title);
 
-    xmlNode* title = findOrCreate(findOrCreate(root,"head"),"title");    
-    xmlAddChild(title,xmlNewText(contents ? contents : ts.title));
+    xmlNode* title = findOrCreate(findOrCreate(root,"head"),"title");
+    xmlAddChild(title,xmlNewText(ts.title ? ts.title : contents));
 
     doIntitle(output,ts.title ? ts.title : contents);
     free(ts.title);
