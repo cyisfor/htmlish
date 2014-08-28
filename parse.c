@@ -513,7 +513,7 @@ int main(void) {
         content = body->children;
     }
     struct ishctx ctx = {
-        .endedNewline = true,
+        .endedNewline = false,
         .e = content
     };
     xmlNode* root = xmlDocGetRootElement(doc);
