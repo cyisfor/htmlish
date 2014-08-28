@@ -168,7 +168,6 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
             xmlChar* c;
             for(c=start;c!=end;++c) {
                 if(!isspace(*c)) {
-                    printf("naspace %c\n",*c);
                     //only add a paragraph if it isn't ALL spaces
                     maybeStartParagraph(ctx,"middle");
                     first = false;
@@ -306,8 +305,21 @@ xmlNode* fuckXPath(xmlNode* parent, const char* name) {
     return NULL;
 }
 
+xmlNode* fuckXPathDivID(xmlNode* parent, const char* id) {
+    if(strcmp(parent->name,"div")==0)
+        return parent;
+    const char* test = xmlGetProp(parent,"id");
+    if(test and strcmp(test,id) == 0)
+        return parent;
+    xmlNode* cur = parent->children;
+    for(;cur;cur=cur->next) {
+        xmlNode* ret = fuckXPath(cur,name);
+        if(ret)
+            return ret;
+    }
+    return NULL;
+}
 void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
-    fprintf(stderr,"got node %s\n",parent->name);
     if(strcmp(parent->name,name)==0)
         handle(parent,ctx);
     xmlNode* cur = parent->children;
@@ -448,7 +460,6 @@ struct titleseeker {
     
 static void eliminateTitles(xmlNode* target, void* ctx) {
     struct titleseeker* ts = (struct titleseeker*) ctx;
-    fprintf(stderr,"Eliminate! %p\n",target);
     if(ts->title == NULL && target->children) {
         const char* title = target->children[0].content;
         fprintf(stderr,"Setting boop %s\n",title);
@@ -523,9 +534,7 @@ int main(void) {
     doByFile(output,"header");
     doByFile(output,"top");
     doByFile(output,"footer");
-    puts("beep");
     doTitle(output);
-    puts("boop");
     doStyle(output);
 
     xmlSaveFormatFile("-",output,1);
