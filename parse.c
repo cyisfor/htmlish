@@ -423,10 +423,9 @@ void doStyle2(xmlNode* target, void* ctx) {
     // xmlFreeNode(target);
 }
 
-void doStyle(xmlDoc* output) {
+void doStyle(xmlDoc* output,xmlNode* root, xmlNode* head) {
     const char* contents = getenv("style");
     struct dostylederp derp = { contents, contents != NULL, false, false };
-    xmlNode* root = xmlDocGetRootElement(output);
     if(!derp.hasContents) {
         foreachNode(root,"stylesheet",findStyle,&derp);
         // if(!derp.hasContents) whocares();
@@ -437,8 +436,6 @@ void doStyle(xmlDoc* output) {
     if(derp.hasContents && !derp.found) {
         // we have a style sheet, but no place in the template to put the link.
 
-        xmlNode* head = findOrCreate(xmlDocGetRootElement(output),"head");
-        assert(head);
         xmlAddChild(head,createStyle(&derp));
     }
     if(derp.needFree) 
@@ -449,8 +446,7 @@ static void doIntitle2(xmlNode* target, void* ctx) {
     xmlReplaceNode(target,xmlNewText(ctx));
 }
 
-void doIntitle(xmlDoc* output, const char* title) {
-    xmlNode* root = xmlDocGetRootElement(output);
+void doIntitle(xmlDoc* output, xmlNode* root, const char* title) {
     foreachNode(root,"intitle",doIntitle2,(void*)title);
 }
 
@@ -467,9 +463,9 @@ static void eliminateTitles(xmlNode* target, void* ctx) {
     xmlUnlinkNode(target);
     //xmlFreeNode(target);
 }
-void doTitle(xmlDoc* output) {
+
+void doTitle(xmlDoc* output, xmlNode* root, xmlNode* head) {
     const char* contents = getenv("title");
-    xmlNode* root = xmlDocGetRootElement(output);
 
     struct titleseeker ts;
     ts.title = NULL;
@@ -480,11 +476,35 @@ void doTitle(xmlDoc* output) {
 
     assert(contents || ts.title);
 
-    xmlNode* title = findOrCreate(findOrCreate(root,"head"),"title");
+    xmlNode* title = findOrCreate(head,"title");
     xmlAddChild(title,xmlNewText(ts.title ? ts.title : contents));
 
-    doIntitle(output,ts.title ? ts.title : contents);
+    doIntitle(output, root, ts.title ? ts.title : contents);
     free(ts.title);
+}
+
+
+struct metaseeker {
+    xmlNode** meta;
+    int nmeta;
+}
+
+static void extractMetas(xmlNode* target, void* ctx) {
+    struct metaseeker* ms = (struct metaseeker*) ctx;
+    xmlUnlinkNode(target);
+    ms->meta = realloc(ms->meta,ms->nmeta+1);
+    ms->meta[ms->nmeta] = target;
+    ++ms->nmeta;
+}
+
+void doMetas(xmlDoc* output, xmlNode* head) {
+    struct metaseeker ms = { NULL, 0 };
+    foreachNode(root,"title",extractMetas,(void*)&ms);
+    int i;
+    for(i=0;i<ms->nmeta;++i) {
+        xmlSetTreeDoc(ms->meta[i],output);
+        xmlAddChild(head,ms->meta[i]);
+    }
 }
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -548,8 +568,16 @@ int main(void) {
     doByFile(output,"header");
     doByFile(output,"top");
     doByFile(output,"footer");
-    doTitle(output);
-    doStyle(output);
+    xmlNode *ohead = fuckXPath(oroot,"head");
+    if(ohead == NULL) {
+        ohead = xmlNewNode(NULL,"head");
+        if(root->children) {
+            xmlAddPrevSibling(root->children,ohead);
+        }
+    }
+    doTitle(output,oroot);
+    doMetas(output,oroot,ohead);
+    doStyle(output,oroot,ohead);
 
     xmlSaveFormatFile("-",output,1);
     return 0;
