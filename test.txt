@@ -1,4 +1,6 @@
 hmph
+<meta http-equiv="true" />
+
 this <b>is</b> a <b>bold</b> and <i>italic</i> test
 derp <pre>
   whee    wheeee
@@ -7,5 +9,5 @@ derp2
 <u>starting</u> with a tag
 
 <title>beep</title>
-
+<meta herp="derp" />
 <blockquote>beep</blockquote>
