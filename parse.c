@@ -118,7 +118,10 @@ static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
 }
 
 static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
+    static char buf[] = "start XXXXXXXXXXXX";
     if(!ctx->inParagraph) {
+        snprintf(buf+6,sizeof(buf)-6,"%s",where);
+        newthingy(ctx,xmlNewComment(buf));
         xmlNodeAddContentLen(ctx->e,"\n",1);
         newthingy(ctx,xmlNewNode(NULL,"p"));
         //xmlSetProp(ctx->e,"where",where);
@@ -128,6 +131,9 @@ static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
 }
 
 static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
+    static char buf[] = "end XXXXXXXXXXXX";
+    snprintf(buf+4,sizeof(buf)-4,"%s",where);
+    newthingy(ctx,xmlNewComment(buf));
     if(ctx->inParagraph) {
         //xmlAddChild(ctx->e,xmlNewComment(where));
         ctx->inParagraph = false;
@@ -224,9 +230,11 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     //otherwise the last text node and this should be in the same
                     //paragraph
                     if(ctx->endedNewline) { 
-                        maybeEndParagraph(ctx,"wimp");
+                        static char buf[] = "wimp tag XXXXXXXXXXX";
+                        snprintf(buf+9,sizeof(buf)-9,"%s",e->name);
+                        maybeEndParagraph(ctx,buf);
                         // make sure this wimp is in the paragraph, not before it.
-                        maybeStartParagraph(ctx,"wimp");
+                        maybeStartParagraph(ctx,buf);
                         ctx->endedNewline = false;
                     }
                 }
