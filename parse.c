@@ -487,7 +487,7 @@ void doTitle(xmlDoc* output, xmlNode* root, xmlNode* head) {
 struct metaseeker {
     xmlNode** meta;
     int nmeta;
-}
+};
 
 static void extractMetas(xmlNode* target, void* ctx) {
     struct metaseeker* ms = (struct metaseeker*) ctx;
@@ -497,14 +497,15 @@ static void extractMetas(xmlNode* target, void* ctx) {
     ++ms->nmeta;
 }
 
-void doMetas(xmlDoc* output, xmlNode* head) {
+void doMetas(xmlDoc* output, xmlNode* root, xmlNode* head) {
     struct metaseeker ms = { NULL, 0 };
-    foreachNode(root,"title",extractMetas,(void*)&ms);
+    foreachNode(root,"meta",extractMetas,(void*)&ms);
     int i;
-    for(i=0;i<ms->nmeta;++i) {
-        xmlSetTreeDoc(ms->meta[i],output);
-        xmlAddChild(head,ms->meta[i]);
+    for(i=0;i<ms.nmeta;++i) {
+        xmlSetTreeDoc(ms.meta[i],output);
+        xmlAddChild(head,ms.meta[i]);
     }
+    free(ms.meta);
 }
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -572,10 +573,12 @@ int main(void) {
     if(ohead == NULL) {
         ohead = xmlNewNode(NULL,"head");
         if(root->children) {
-            xmlAddPrevSibling(root->children,ohead);
+            xmlAddPrevSibling(oroot->children,ohead);
+        } else {
+            xmlAddChild(oroot,ohead);
         }
     }
-    doTitle(output,oroot);
+    doTitle(output,oroot,ohead);
     doMetas(output,oroot,ohead);
     doStyle(output,oroot,ohead);
 
