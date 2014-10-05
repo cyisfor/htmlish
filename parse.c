@@ -118,9 +118,9 @@ static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
 }
 
 static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
-    static char buf[] = "start XXXXXXXXXXXX";
+    static char buf[0x200];
     if(!ctx->inParagraph) {
-        snprintf(buf+6,sizeof(buf)-6,"%s",where);
+        snprintf(buf,sizeof(buf),"start %s",where);
         newthingy(ctx,xmlNewComment(buf));
         xmlNodeAddContentLen(ctx->e,"\n",1);
         newthingy(ctx,xmlNewNode(NULL,"p"));
@@ -131,8 +131,8 @@ static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
 }
 
 static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
-    static char buf[] = "end XXXXXXXXXXXX";
-    snprintf(buf+4,sizeof(buf)-4,"%s",where);
+    static char buf[0x200];
+    snprintf(buf,sizeof(buf),"end %s",where);
     newthingy(ctx,xmlNewComment(buf));
     if(ctx->inParagraph) {
         //xmlAddChild(ctx->e,xmlNewComment(where));
@@ -214,28 +214,34 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-            { bool blockElement = 
+            { bool fakeElement = 
+                0 == LITCMP(e->name,"title") ||
+                    0 == LITCMP(e->name,"meta");
+                if(!fakeElement) {
+                    { bool blockElement = 
                         0 == LITCMP(e->name,"ul") ||
-                        0 == LITCMP(e->name,"ol") ||
-                        0 == LITCMP(e->name,"p") || // inception
-                        0 == LITCMP(e->name,"div") ||
-                        0 == LITCMP(e->name,"table") ||
-                        0 == LITCMP(e->name,"blockquote");
-                if(blockElement) {
-                    // no need to start (or have) a paragraph. This element is huge.
-                    maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
-                } else {
-                    //start a paragraph if this element is a wimp
-                    //but only if the last text node ended on a newline.
-                    //otherwise the last text node and this should be in the same
-                    //paragraph
-                    if(ctx->endedNewline) { 
-                        static char buf[] = "wimp tag XXXXXXXXXXX";
-                        snprintf(buf+9,sizeof(buf)-9,"%s",e->name);
-                        maybeEndParagraph(ctx,buf);
-                        // make sure this wimp is in the paragraph, not before it.
-                        maybeStartParagraph(ctx,buf);
-                        ctx->endedNewline = false;
+                            0 == LITCMP(e->name,"ol") ||
+                            0 == LITCMP(e->name,"p") || // inception
+                            0 == LITCMP(e->name,"div") ||
+                            0 == LITCMP(e->name,"table") ||
+                            0 == LITCMP(e->name,"blockquote");
+                        if(blockElement) {
+                            // no need to start (or have) a paragraph. This element is huge.
+                            maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
+                        } else {
+                            //start a paragraph if this element is a wimp
+                            //but only if the last text node ended on a newline.
+                            //otherwise the last text node and this should be in the same
+                            //paragraph
+                            if(ctx->endedNewline) { 
+                                static char buf[0x100] = "";
+                                snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
+                                maybeEndParagraph(ctx,buf);
+                                // make sure this wimp is in the paragraph, not before it.
+                                maybeStartParagraph(ctx,buf);
+                                ctx->endedNewline = false;
+                            }
+                        }
                     }
                 }
             }
