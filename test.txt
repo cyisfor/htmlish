@@ -4,6 +4,7 @@ hmph
 this <b>is</b> a <b>bold</b> and <i>italic</i> test
 derp <pre>
   whee    wheeee
+  &copy;
 </pre> erpd
 derp2 
 <u>starting</u> with a tag

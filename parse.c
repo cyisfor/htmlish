@@ -299,7 +299,7 @@ xmlDoc* readFunky(int fd, const char* content) {
     char buf[BUFSIZE];
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
-    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT);
+    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT|XML_PARSE_DTDLOAD);
     assert(ctx);
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
     if(fd<0) {
