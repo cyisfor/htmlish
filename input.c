@@ -1,5 +1,13 @@
-#inclued "input.h"
+#include "input.h"
 #include <libxml/xmlIO.h>
+
+#include <sys/stat.h>
+
+#include <wordexp.h>
+
+#include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
 
 const char* cacheDir = NULL;
 
@@ -17,7 +25,7 @@ static void* cacheopen(char const* url) {
 
     xmlParserInputBufferPtr result = NULL;
 
-    static const char dest[512];
+    static char dest[512];
     snprintf(dest,512,"%s/%s",cacheDir,basename);
     struct stat info;
     if(0==stat(dest,&info)) {
@@ -43,7 +51,7 @@ static int recursive_read(xmlParserInputBufferPtr source, char* buffer, int push
     left -= nowpushed;
 
     if(left>0) {
-        int ok = xmlParserInputBufferRead(source,len-pushed);
+        int ok = xmlParserInputBufferRead(source,left);
         assert(ok==0);
         // no need to fill up to full capacity every time...
         return recursive_read(source,buffer,pushed,left);
@@ -63,14 +71,14 @@ static int cacheclose(void* ctx) {
 }
 
 void setupInput(void) {
-    wordexp_t exp;
+    wordexp_t p;
     struct stat info;
     wordexp("~/.cache/", &p, 0);
     assert(p.we_wordc > 0);
     if(0!=stat(p.we_wordv[0],&info)) {
         mkdir(p.we_wordv[0]);
     }
-    wordexp("~/.cache/xml/",&p, WRDE_REUSE);
+    assert(0==wordexp("~/.cache/xml/",&p, WRDE_REUSE));
     cacheDir = strdup(p.we_wordv[0]);
     wordfree(&p);
 

@@ -1,0 +1,1 @@
+void setupInput(void);
