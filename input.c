@@ -5,10 +5,14 @@
 
 #include <wordexp.h>
 
+#include <unistd.h> // read write etc
+#include <fcntl.h> // open
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include <stdint.h>
 
 const char* cacheDir = NULL;
 
@@ -26,7 +30,8 @@ static int recursive_read(xmlParserInputBufferPtr source, char* buffer, int push
     assert(left>0);
 
     int nowpushed = xmlParserInputBufferPush(source,left,buffer);
-    assert(nowpushed>=0);
+    if(nowpushed < 0) {
+
 
     pushed += nowpushed;
     buffer += nowpushed;
@@ -38,7 +43,7 @@ static int recursive_read(xmlParserInputBufferPtr source, char* buffer, int push
             *eof = true;
         } else {
             // XXX: no need to fill up to full capacity every time...
-            return recursive_read(source,buffer,pushed,left);
+            return recursive_read(source,buffer,pushed,left,eof);
         }
     }
     return pushed;
@@ -51,34 +56,52 @@ static void* cacheopen(char const* url) {
     static char dest[508];
     snprintf(dest,508,"%s/%s",cacheDir,basename);
 
-    static char temp[512];
     bool didtemp = false;
 
     int doopen(void) {
         int result = open(dest,O_RDONLY);
         if(result<0) {
-            xmlParserInputBufferPtr source = xmlParserInputBufferCreateFile(fopen(dest,"rt"),XML_CHAR_ENCODING_UTF8);
-            if(!didtemp) {
-                snprintf(temp,512,"%s.temp",dest);
-                didtemp = true;
+            char temp[512];
+            snprintf(temp,512,"%s.temp",dest);
+
+            if(xmlIOHTTPMatch(url)) {
+                xmlNanoHTTPSave(xmlNanoHTTPOpen(url, NULL),temp);
+            } else if(xmlIOFTPMatch(url)) {
+                void* ftp = xmlNanoFTPOpen(url);
+                int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
+                assert(out>0);
+                char buf[0x1000];
+                for(;;) {
+                    int amt = xmlNanoFTPRead(ftp, buf, 0x1000);
+                    if(amt==0) break;
+                    assert(amt>0);
+                    write(out,buf,amt);
+                }
+                close(out);            
+            } else {
+                FILE* fp = xmlFileOpen(url);
+                if(!fp) {
+                    fprintf(stderr,"No idea what to do with url %s\n",url);
+                    exit(__LINE__);
+                }
+                int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
+                assert(out>0);
+                char buf[0x1000];
+                for(;;) {
+                    int amt = xmlNanoFTPRead(ftp, buf, 0x1000);
+                    if(amt==0) break;
+                    assert(amt>0);
+                    write(out,buf,amt);
+                }
+                close(out);            
             }
-            int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
-            assert(out>0);
-            char buf[0x1000];
-            bool eof = false;
-            do {
-                int amt = recursive_read(source,buf,0,0x1000,&eof);
-                // should return the tail end of the file, when eof is true.
-                write(out,buf,amt);
-            } while(!eof);
-            close(out);
             rename(temp,dest); // doesn't matter if fails
             unlink(temp); // in case it failed
             return doopen();
         }
         return result;
     }
-    return doopen();
+    return (void*)(intptr_t) doopen();
 }
 
 void setupInput(void) {
@@ -98,6 +121,6 @@ void setupInput(void) {
 
     assert(cacheDir);
 
-    xmlRegisterInputCallbacks(match,cacheopen,read,close);
+    xmlRegisterInputCallbacks(match,cacheopen,(void*)read,(void*)close);
     xmlRegisterDefaultInputCallbacks();
 }
