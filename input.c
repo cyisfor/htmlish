@@ -10,6 +10,9 @@
 #include <unistd.h> // read write etc
 #include <fcntl.h> // open
 
+#include <sys/wait.h>
+
+
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -44,8 +47,10 @@ static void* cacheopen(char const* url) {
 
             if(xmlIOHTTPMatch(url)) {
                 void* ctx = xmlNanoHTTPOpen(url, NULL);
-                if(xmlNanoHTTPReturnCode(ctx) < 300) {
+                if(xmlNanoHTTPReturnCode(ctx) != 200) {
                     // XXX: it always is... w3.org dies on HTTP/1.0
+                    xmlNanoHTTPClose(ctx);
+                    fprintf(stderr,"Curl fallback for %s\n",url);
                     int pid = fork();
                     if(pid == 0) {
                         execlp("curl","curl","-o",temp,url);
@@ -53,9 +58,13 @@ static void* cacheopen(char const* url) {
                     }
                     int status = 0;
                     waitpid(pid,&status,0);
-                    assert(WIFEXITED(status) && (0 == WEXITSTATUS(status)));
+                    if(!(WIFEXITED(status) && (0 == WEXITSTATUS(status)))) {
+                        fprintf(stderr,"CUrl failed! %x %d\n",status,WEXITSTATUS(status));
+                        abort();
+                    }
+                } else {
+                    assert(0==xmlNanoHTTPSave(ctx,temp));
                 }
-                assert(0==xmlNanoHTTPSave(ctx,temp));
             } else if(xmlIOFTPMatch(url)) {
                 void* ftp = xmlNanoFTPOpen(url);
                 int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
