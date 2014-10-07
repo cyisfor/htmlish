@@ -115,7 +115,8 @@ static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
     if(ctx->inParagraph) {
         xmlAddChild(ctx->e,thingy);
     } else {
-        xmlAddNextSibling(ctx->e,thingy);
+        fputs("bork\n",stderr);
+        assert(xmlAddNextSibling(ctx->e,thingy));
         ctx->e = thingy;
     }
 }
@@ -210,8 +211,11 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
     xmlNode* e = root->children;
     while(e) {
         xmlNode* next = e->next;
-        if(e->type == XML_ENTITY_NODE)
-            fprintf(stderr,"Entity boo %s\n",e->name);
+        switch(e->type) {
+            case XML_ENTITY_NODE:
+            case XML_ENTITY_REF_NODE:
+                fprintf(stderr,"Entity boo %s\n",e->name);
+        };
         fprintf(stderr,"e type %d\n",e->type);
         switch(e->type) {
         case XML_TEXT_NODE:
@@ -259,6 +263,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                 }
             }
         default:
+            fputs("def\n",stderr);
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
         e = next;
@@ -284,14 +289,15 @@ xmlDoc* readFunky(int fd, const char* content) {
         if(entity) return entity;
         fprintf(stderr,"Warning: jury rigging entity %s\n",name);
         if(!ctx->myDoc->extSubset)
-            xmlCreateIntSubset(ctx->myDoc, "root", "derp", "derp.dtd");
-        xmlAddDocEntity(ctx->myDoc,
+            xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+                    
+        xmlAddDtdEntity(ctx->myDoc,
                 name,
                 XML_INTERNAL_GENERAL_ENTITY,
                 "derp",
                 "derp.dtd",
                 name);
-        return xmlGetDocEntity(ctx->myDoc, name);
+        return xmlGetDtdEntity(ctx->myDoc, name);
     }
     ctx->sax->getEntity = newGetEntity;
 
