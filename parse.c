@@ -213,9 +213,13 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
         switch(e->type) {
             case XML_ENTITY_NODE:
             case XML_ENTITY_REF_NODE:
-                fprintf(stderr,"Entity boo %s\n",e->name);
         };
         switch(e->type) {
+        case XML_ENTITY_NODE:
+        case XML_ENTITY_REF_NODE:
+            fprintf(stderr,"Entity boo %s %s %s\n",e->name,e->content,e->nodeValue);
+            exit(23);
+            break;
         case XML_TEXT_NODE:
             // if this is a text node, it doesn't matter whether the previous text node
             // ended in a newline or not. The important thing is to know whether THIS
@@ -299,7 +303,6 @@ xmlDoc* readFunky(int fd, const char* content) {
     xmlEntityPtr newGetEntity(void* ectx, const xmlChar* name) {
         xmlEntityPtr entity = oldGetEntity(ectx,name);
         if(entity) return entity;
-#if FIREFOX_DOES_NOT_SUCK
         entity = xmlGetDtdEntity(ctx->myDoc, name);
         if(entity) return entity;
         fixDTD(ctx->myDoc);
@@ -314,10 +317,6 @@ xmlDoc* readFunky(int fd, const char* content) {
                 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd",
                 name);
         return xmlGetDtdEntity(ctx->myDoc, name);
-#else /* FIREFOX_DOES_NOT_SUCK */
-        fprintf(stderr,"***************************************************\nFirefox sucks, sorry!\nIt forces you not to use utf-8 documents with a doctype, so no external entities allowed, only &amp; &gt; and &lt;.\nPlease edit your document and remove all entities, replacing them with unicode characters, then save in utf-8 format.\n***************************************************\nOffending file/content: %s\n***************************************************\n",content);
-        exit(23);
-#endif /* FIREFOX_DOES_NOT_SUCK */
     }
     ctx->sax->getEntity = newGetEntity;
 
