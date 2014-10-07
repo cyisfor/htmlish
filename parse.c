@@ -211,13 +211,9 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
     while(e) {
         xmlNode* next = e->next;
         switch(e->type) {
-            case XML_ENTITY_NODE:
-            case XML_ENTITY_REF_NODE:
-        };
-        switch(e->type) {
         case XML_ENTITY_NODE:
         case XML_ENTITY_REF_NODE:
-            fprintf(stderr,"Entity boo %s %s %s\n",e->name,e->content,e->nodeValue);
+            fprintf(stderr,"Entity boo %s %s\n",e->name,e->content);
             exit(23);
             break;
         case XML_TEXT_NODE:
@@ -288,7 +284,10 @@ static void fixDTD(xmlDoc* doc) {
     }
 }
 
-#define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<html>"
+#define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" \
+    "<html>"
+
 #define FOOTER "</html>"
 
 #define BUFSIZE 0x1000
@@ -599,6 +598,8 @@ int main(void) {
         return 0;
     }
     LIBXML_TEST_VERSION;
+
+    setupInput();
 
     xmlDoc* doc = readFunky(0,"<main htmlish markup>");
     assert(doc);
