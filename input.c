@@ -1,5 +1,7 @@
 #include "input.h"
 #include <libxml/xmlIO.h>
+#include <libxml/nanohttp.h>
+#include <libxml/nanoftp.h>
 
 #include <sys/stat.h>
 
@@ -42,7 +44,17 @@ static void* cacheopen(char const* url) {
 
             if(xmlIOHTTPMatch(url)) {
                 void* ctx = xmlNanoHTTPOpen(url, NULL);
-                assert(xmlNanoHTTPReturnCode(ctx) < 300);
+                if(xmlNanoHTTPReturnCode(ctx) < 300) {
+                    // XXX: it always is... w3.org dies on HTTP/1.0
+                    int pid = fork();
+                    if(pid == 0) {
+                        execlp("curl","curl","-o",temp,url);
+                        abort();
+                    }
+                    int status = 0;
+                    waitpid(pid,&status,0);
+                    assert(WIFEXITED(status) && (0 == WEXITSTATUS(status)));
+                }
                 assert(0==xmlNanoHTTPSave(ctx,temp));
             } else if(xmlIOFTPMatch(url)) {
                 void* ftp = xmlNanoFTPOpen(url);
@@ -104,6 +116,9 @@ void setupInput(void) {
     wordfree(&p);
 
     assert(cacheDir);
+
+    xmlNanoHTTPInit();
+    xmlNanoFTPInit();
 
     xmlRegisterInputCallbacks(match,cacheopen,(void*)read,(void*)close);
     xmlRegisterDefaultInputCallbacks();
