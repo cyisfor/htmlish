@@ -1,3 +1,5 @@
+#include "input.h"
+
 #define LIBXML2_NEW_BUFFER
 #define _GNU_SOURCE
 
@@ -296,6 +298,7 @@ xmlDoc* readFunky(int fd, const char* content) {
     char buf[BUFSIZE];
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
+    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT|XML_PARSE_DTDVALID);
     assert(ctx);
     getEntitySAXFunc oldGetEntity = ctx->sax->getEntity;
 
