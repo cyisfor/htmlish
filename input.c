@@ -25,7 +25,6 @@ bool reallyDownload = false;
 
 static int match(const char* uri) {
     if(reallyDownload) return 0;
-    fprintf(stderr,"cache match %s\n",uri);
     // any other remote URLs that don't conform to this?
     return strstr(uri,"://")== NULL ? 0 : 1;
 }
@@ -46,14 +45,22 @@ static void* cacheopen(char const* url) {
             snprintf(temp,512,"%s.temp",dest);
 
             if(xmlIOHTTPMatch(url)) {
-                void* ctx = xmlNanoHTTPOpen(url, NULL);
-                if(xmlNanoHTTPReturnCode(ctx) != 200) {
+                void* ctx = NULL;
+#if W3_ARE_NOT_MORONS
+                ctx = xmlNanoHTTPOpen(url, NULL);
+                if(xmlNanoHTTPReturnCode(ctx) != 200)
+#else
+                if(true)
+#endif
+                {
                     // XXX: it always is... w3.org dies on HTTP/1.0
+#if W3_ARE_NOT_MORONS
                     xmlNanoHTTPClose(ctx);
+#endif
                     fprintf(stderr,"Curl fallback for %s\n",url);
                     int pid = fork();
                     if(pid == 0) {
-                        execlp("curl","curl","-o",temp,url);
+                        execlp("curl","curl","-o",temp,url,NULL);
                         abort();
                     }
                     int status = 0;

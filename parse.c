@@ -268,12 +268,13 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
     }
 }
 
+#define FIREFOX_DOES_NOT_SUCK
+
 static void fixDTD(xmlDoc* doc) {
     if(!doc->extSubset) {
-        fputs("bokr\n",stderr);
         xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.0 Strict//EN",
                 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
-#if FIREFOX_DOES_NOT_SUCK
+#ifdef FIREFOX_DOES_NOT_SUCK
         if(doc->children) {
             xmlAddPrevSibling(doc->children,(xmlNodePtr)dtd);
             // the above eats the dtd
@@ -298,30 +299,8 @@ xmlDoc* readFunky(int fd, const char* content) {
     char buf[BUFSIZE];
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
-    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT|XML_PARSE_DTDVALID);
+    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT);
     assert(ctx);
-    getEntitySAXFunc oldGetEntity = ctx->sax->getEntity;
-
-    xmlEntityPtr newGetEntity(void* ectx, const xmlChar* name) {
-        xmlEntityPtr entity = oldGetEntity(ectx,name);
-        if(entity) return entity;
-        entity = xmlGetDtdEntity(ctx->myDoc, name);
-        if(entity) return entity;
-        fixDTD(ctx->myDoc);
-        entity = xmlGetDtdEntity(ctx->myDoc, name);
-        if(entity) return entity;
-                    
-        fprintf(stderr,"Warning: jury rigging entity %s\n",name);
-        xmlAddDtdEntity(ctx->myDoc,
-                name,
-                XML_INTERNAL_GENERAL_ENTITY,
-                "-//W3C//DTD XHTML 1.1//EN", 
-                "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd",
-                name);
-        return xmlGetDtdEntity(ctx->myDoc, name);
-    }
-    ctx->sax->getEntity = newGetEntity;
-
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
     if(fd<0) {
         xmlParseChunk(ctx,content,strlen(content),0);
