@@ -270,8 +270,23 @@ xmlDoc* readFunky(int fd, const char* content) {
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
     assert(ctx);
+    getEntitySAXFunc oldGetEntity = ctx->getEntity;
 
-    fprintf(stderr,"derp %p %p\n",ctx->sax,ctx->user_data);
+    xmlEntityPtr newGetEntity(void* ctx, const xmlChar* name) {
+        xmlEntityPtr entity = oldGetEntity(ctx->userData,name);
+        if(entity) return entity;
+        fprintf(stderr,"Warning: jury rigging entity %s\n",name);
+        xmlAddDocEntity(ctx->myDoc,
+                name,
+                XML_INTERNAL_GENERAL_ENTITY,
+                NULL,
+                NULL,
+                name);
+        return oldGetEntity(ctx->userData,name);
+    }
+    ctx->getEntity = newGetEntity;
+
+    fprintf(stderr,"derp %p %p\n",ctx->sax,ctx->userData);
     kill(SIGTSTP,getpid());
 
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
