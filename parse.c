@@ -271,6 +271,7 @@ static void fixDTD(xmlDoc* doc) {
         fputs("bokr\n",stderr);
         xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.0 Strict//EN",
                 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
+#if FIREFOX_DOES_NOT_SUCK
         if(doc->children) {
             xmlAddPrevSibling(doc->children,(xmlNodePtr)dtd);
             // the above eats the dtd
@@ -279,6 +280,7 @@ static void fixDTD(xmlDoc* doc) {
             // the above will eat the dtd once you add another child
         }
         xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+#endif /* FIREFOX_DOES_NOT_SUCK */
     }
 }
 
@@ -297,6 +299,7 @@ xmlDoc* readFunky(int fd, const char* content) {
     xmlEntityPtr newGetEntity(void* ectx, const xmlChar* name) {
         xmlEntityPtr entity = oldGetEntity(ectx,name);
         if(entity) return entity;
+#if FIREFOX_DOES_NOT_SUCK
         entity = xmlGetDtdEntity(ctx->myDoc, name);
         if(entity) return entity;
         fixDTD(ctx->myDoc);
@@ -311,6 +314,10 @@ xmlDoc* readFunky(int fd, const char* content) {
                 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd",
                 name);
         return xmlGetDtdEntity(ctx->myDoc, name);
+#else /* FIREFOX_DOES_NOT_SUCK */
+        fprintf(stderr,"Firefox sucks, sorry!\nIt forces you not to use utf-8 documents with a doctype, so no external entities allowed, only &amp; &gt; and &lt;.\nPlease edit your document and remove all entities, replacing them with unicode characters, then save in utf-8 format.\nOffending file/content: %s",content);
+        exit(23);
+#endif /* FIREFOX_DOES_NOT_SUCK */
     }
     ctx->sax->getEntity = newGetEntity;
 
@@ -331,10 +338,6 @@ xmlDoc* readFunky(int fd, const char* content) {
         fprintf(stderr,"Warning: not well formed.\n");
     }
     xmlFreeParserCtxt(ctx);
-    FILE* derp = fopen("/tmp/aoeu.xml","wt");
-    xmlDocDump(derp,doc);
-    fclose(derp);
-    //exit(23);
     return doc;
 }
 static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
@@ -598,7 +601,7 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
-    xmlDoc* doc = readFunky(0,NULL);
+    xmlDoc* doc = readFunky(0,"<stdin>");
     assert(doc);
 
     xmlDoc* output;
