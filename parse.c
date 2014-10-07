@@ -270,21 +270,25 @@ xmlDoc* readFunky(int fd, const char* content) {
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
     assert(ctx);
-    getEntitySAXFunc oldGetEntity = ctx->getEntity;
+    getEntitySAXFunc oldGetEntity = ctx->sax->getEntity;
 
-    xmlEntityPtr newGetEntity(void* ctx, const xmlChar* name) {
-        xmlEntityPtr entity = oldGetEntity(ctx->userData,name);
+    xmlEntityPtr newGetEntity(void* ectx, const xmlChar* name) {
+        xmlEntityPtr entity = oldGetEntity(ectx,name);
+        if(entity) return entity;
+        entity = xmlGetDtdEntity(ctx->myDoc, name);
         if(entity) return entity;
         fprintf(stderr,"Warning: jury rigging entity %s\n",name);
-        xmlAddDocEntity(ctx->myDoc,
+        if(!ctx->myDoc->extSubset)
+            xmlNewDtd(ctx->myDoc, "root", "derp", "derp.dtd");
+        xmlAddDtdEntity(ctx->myDoc,
                 name,
                 XML_INTERNAL_GENERAL_ENTITY,
-                NULL,
-                NULL,
+                "root",
+                "root",
                 name);
-        return oldGetEntity(ctx->userData,name);
+        return xmlGetDtdEntity(ctx->myDoc, name);
     }
-    ctx->getEntity = newGetEntity;
+    ctx->sax->getEntity = newGetEntity;
 
     fprintf(stderr,"derp %p %p\n",ctx->sax,ctx->userData);
     kill(SIGTSTP,getpid());
