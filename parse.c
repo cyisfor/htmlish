@@ -266,8 +266,22 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
     }
 }
 
-#define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>"
-#define FOOTER "</root>"
+static void fixDTD(xmlDoc* doc) {
+    if(!doc->extSubset) {
+        fputs("bokr\n",stderr);
+        xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+        if(doc->children) {
+            xmlAddPrevSibling(doc->children,dtd);
+            // the above eats the dtd
+            xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+        } else {
+            xmlAddChild(doc,dtd);
+        }
+    }
+}
+
+#define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<html>"
+#define FOOTER "</html>"
 
 #define BUFSIZE 0x1000
 xmlDoc* readFunky(int fd, const char* content) {
@@ -283,12 +297,9 @@ xmlDoc* readFunky(int fd, const char* content) {
         if(entity) return entity;
         entity = xmlGetDtdEntity(ctx->myDoc, name);
         if(entity) return entity;
-        if(!ctx->myDoc->extSubset) {
-            xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
-            xmlAddNextSibling(ctx->myDoc->children,dtd);
-            entity = xmlGetDtdEntity(ctx->myDoc, name);
-            if(entity) return entity;
-        }
+        fixDTD(ctx->myDoc);
+        entity = xmlGetDtdEntity(ctx->myDoc, name);
+        if(entity) return entity;
                     
         fprintf(stderr,"Warning: jury rigging entity %s\n",name);
         xmlAddDtdEntity(ctx->myDoc,
@@ -594,10 +605,11 @@ int main(void) {
         if(!output) {
             fprintf(stderr,"Error: template failed... not sure if well formed or not.\n");
             exit(2);
-        }
+        }        
     } else {
         output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
+    fixDTD(output);
     xmlNode* oroot = xmlDocGetRootElement(output);
     xmlNode* content = fuckXPath(oroot,"content");
     if(content) {
