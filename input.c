@@ -48,36 +48,37 @@ static void* cacheopen(char const* url) {
     const char* basename = strrchr(url,'/');
     assert(basename);
 
-    static char dest[512];
-    snprintf(dest,512,"%s/%s",cacheDir,basename);
+    static char dest[508];
+    snprintf(dest,508,"%s/%s",cacheDir,basename);
 
-    int result = open(dest,O_RDONLY);
-    if(result<0) {
-        xmlParserInputBufferPtr source = xmlParserInputBufferCreateFile(fopen(dest,"rt"),XML_CHAR_ENCODING_UTF8);
-        char temp[512];
-        snprintf(temp,512,"%s.temp",dest);
-        int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
-        assert(out>0);
-        char buf[0x1000];
-        bool eof = false;
-        do {
-            int amt = recursive_read(source,buf,0,0x1000,&eof);
-            write(out,buf,amt);
-        } while(!eof);
-        close(out);
-        rename(temp,dest); // doesn't matter if fails
-        unlink(temp); // in case it failed
+    static char temp[512];
+    bool didtemp = false;
 
-
-        
-
-    } else {
-        // recursion blocker
-        reallyDownload = true;
-        result = xmlParserInputBufferCreateFilename(url,XML_CHAR_ENCODING_UTF8);
-        reallyDownload = false;
+    int doopen(void) {
+        int result = open(dest,O_RDONLY);
+        if(result<0) {
+            xmlParserInputBufferPtr source = xmlParserInputBufferCreateFile(fopen(dest,"rt"),XML_CHAR_ENCODING_UTF8);
+            if(!didtemp) {
+                snprintf(temp,512,"%s.temp",dest);
+                didtemp = true;
+            }
+            int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
+            assert(out>0);
+            char buf[0x1000];
+            bool eof = false;
+            do {
+                int amt = recursive_read(source,buf,0,0x1000,&eof);
+                // should return the tail end of the file, when eof is true.
+                write(out,buf,amt);
+            } while(!eof);
+            close(out);
+            rename(temp,dest); // doesn't matter if fails
+            unlink(temp); // in case it failed
+            return doopen();
+        }
+        return result;
     }
-    return result;
+    return doopen();
 }
 
 static int cacheread(void* ctx, char* buffer, int len) {
