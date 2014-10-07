@@ -9,6 +9,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <signal.h>
 
 /* if a line is blank, a paragraph follows, or a block element.
  * so, after processText, if it ends in \n, set a flag to check the next element.
@@ -108,6 +109,8 @@ struct ishctx {
 
 xmlNode* currentAdderThingy = NULL;
 
+bool debugging = false;
+
 static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
     if(ctx->inParagraph) {
         xmlAddChild(ctx->e,thingy);
@@ -120,8 +123,10 @@ static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
 static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
     static char buf[0x200];
     if(!ctx->inParagraph) {
-        snprintf(buf,sizeof(buf),"start %s",where);
-        newthingy(ctx,xmlNewComment(buf));
+        if(debugging) {
+            snprintf(buf,sizeof(buf),"start %s",where);
+            newthingy(ctx,xmlNewComment(buf));
+        }
         xmlNodeAddContentLen(ctx->e,"\n",1);
         newthingy(ctx,xmlNewNode(NULL,"p"));
         //xmlSetProp(ctx->e,"where",where);
@@ -132,8 +137,10 @@ static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
 
 static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     static char buf[0x200];
-    snprintf(buf,sizeof(buf),"end %s",where);
-    newthingy(ctx,xmlNewComment(buf));
+    if(debugging) {
+        snprintf(buf,sizeof(buf),"end %s",where);
+        newthingy(ctx,xmlNewComment(buf));
+    }
     if(ctx->inParagraph) {
         //xmlAddChild(ctx->e,xmlNewComment(where));
         ctx->inParagraph = false;
@@ -235,7 +242,8 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                             //paragraph
                             if(ctx->endedNewline) { 
                                 static char buf[0x100] = "";
-                                snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
+                                if(debugging) 
+                                    snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
                                 maybeEndParagraph(ctx,buf);
                                 // make sure this wimp is in the paragraph, not before it.
                                 maybeStartParagraph(ctx,buf);
@@ -256,18 +264,25 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 #define FOOTER "</root>"
 
 #define BUFSIZE 0x1000
-xmlDoc* readFunky(int fd) {
+xmlDoc* readFunky(int fd, const char* content) {
     xmlParserCtxtPtr ctx;
     char buf[BUFSIZE];
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
     assert(ctx);
 
+    fprintf(stderr,"derp %p %p\n",ctx->sax,ctx->user_data);
+    kill(SIGTSTP,getpid());
+
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
-    for(;;) {
-        ssize_t amt = read(fd,buf,BUFSIZE);
-        if(amt<=0) break;
-        xmlParseChunk(ctx, buf, amt, 0);
+    if(fd<0) {
+        xmlParseChunk(ctx,content,strlen(content),0);
+    } else {
+        for(;;) {
+            ssize_t amt = read(fd,buf,BUFSIZE);
+            if(amt<=0) break;
+            xmlParseChunk(ctx, buf, amt, 0);
+        }
     }
 
     xmlParseChunk(ctx,FOOTER,sizeof(FOOTER)-1, 1);
@@ -282,8 +297,7 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
     if(!path) return;
 
     int inp = open(path,O_RDONLY);
-    assert(inp >= 0);
-    xmlDoc* doc = readFunky(inp);
+    xmlDoc* doc = readFunky(inp,path);
     close(inp);
     if(!doc) {
         fprintf(stderr,"Couldn't parse %s",path);            
@@ -334,6 +348,11 @@ xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
     return NULL;
 }
 void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
+    if(!parent->name) {
+        assert(!parent->children);
+        // we don't process text
+        return;
+    }
     if(strcmp(parent->name,name)==0)
         handle(parent,ctx);
     xmlNode* cur = parent->children;
@@ -535,7 +554,7 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
-    xmlDoc* doc = readFunky(0);
+    xmlDoc* doc = readFunky(0,NULL);
     assert(doc);
 
     xmlDoc* output;
