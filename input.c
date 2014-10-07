@@ -36,10 +36,10 @@ static int recursive_read(xmlParserInputBufferPtr source, char* buffer, int push
         int ok = xmlParserInputBufferRead(source,left);
         if(ok<0) {
             *eof = true;
-            return pushed;
+        } else {
+            // XXX: no need to fill up to full capacity every time...
+            return recursive_read(source,buffer,pushed,left);
         }
-        // no need to fill up to full capacity every time...
-        return recursive_read(source,buffer,pushed,left);
     }
     return pushed;
 }
@@ -81,17 +81,6 @@ static void* cacheopen(char const* url) {
     return doopen();
 }
 
-static int cacheread(void* ctx, char* buffer, int len) {
-    xmlParserInputBufferPtr source = (xmlParserInputBufferPtr)ctx;
-    return recursive_read(source,buffer,0,len);
-}
-
-static int cacheclose(void* ctx) {
-    xmlParserInputBufferPtr source = (xmlParserInputBufferPtr)ctx;
-    xmlFreeParserInputBuffer(source);
-    return 0;
-}
-
 void setupInput(void) {
     wordexp_t p;
     struct stat info;
@@ -109,6 +98,6 @@ void setupInput(void) {
 
     assert(cacheDir);
 
-    xmlRegisterInputCallbacks(match,cacheopen,cacheread,cacheclose);
+    xmlRegisterInputCallbacks(match,cacheopen,read,close);
     xmlRegisterDefaultInputCallbacks();
 }
