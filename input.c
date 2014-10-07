@@ -41,7 +41,9 @@ static void* cacheopen(char const* url) {
             snprintf(temp,512,"%s.temp",dest);
 
             if(xmlIOHTTPMatch(url)) {
-                xmlNanoHTTPSave(xmlNanoHTTPOpen(url, NULL),temp);
+                void* ctx = xmlNanoHTTPOpen(url, NULL);
+                assert(xmlNanoHTTPReturnCode(ctx) < 300);
+                assert(0==xmlNanoHTTPSave(ctx,temp));
             } else if(xmlIOFTPMatch(url)) {
                 void* ftp = xmlNanoFTPOpen(url);
                 int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
@@ -59,17 +61,22 @@ static void* cacheopen(char const* url) {
                 struct stat fpstat;
                 if(!fp) {
                     fprintf(stderr,"No idea what to do with url %s\n",url);
-                    exit(__LINE__);
+                    abort();
                 }
-                assert(0==fstat(fileno(fp),&fpstat));
+                int inp = fileno(fp);
+                assert(0==fstat(inp,&fpstat));
                 off_t left = fpstat.st_size;
                 int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
                 assert(out>0);
                 do {
-                    ssize_t amt = sendfile(out,fileno(fp),left);
+                    ssize_t amt = sendfile(out,inp,NULL,left);
+                    if(amt<0) {
+                        perror(url);
+                    }
                     assert(amt>=0);
                     left -= amt;
                 } while(left > 0);
+                fclose(fp);
                 close(out);
             }
             rename(temp,dest); // doesn't matter if fails
