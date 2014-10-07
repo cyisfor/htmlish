@@ -25,30 +25,6 @@ static int match(const char* uri) {
     return strstr(uri,"://")== NULL ? 0 : 1;
 }
 
-static int recursive_read(xmlParserInputBufferPtr source, char* buffer, int pushed, int left, bool* eof) {
-    //if(left == 0) return pushed;
-    assert(left>0);
-
-    int nowpushed = xmlParserInputBufferPush(source,left,buffer);
-    if(nowpushed < 0) {
-
-
-    pushed += nowpushed;
-    buffer += nowpushed;
-    left -= nowpushed;
-
-    if(left>0) {
-        int ok = xmlParserInputBufferRead(source,left);
-        if(ok<0) {
-            *eof = true;
-        } else {
-            // XXX: no need to fill up to full capacity every time...
-            return recursive_read(source,buffer,pushed,left,eof);
-        }
-    }
-    return pushed;
-}
-
 static void* cacheopen(char const* url) {
     const char* basename = strrchr(url,'/');
     assert(basename);
@@ -80,20 +56,21 @@ static void* cacheopen(char const* url) {
                 close(out);            
             } else {
                 FILE* fp = xmlFileOpen(url);
+                struct stat fpstat;
                 if(!fp) {
                     fprintf(stderr,"No idea what to do with url %s\n",url);
                     exit(__LINE__);
                 }
+                assert(0==fstat(fileno(fp),&fpstat));
+                off_t left = fpstat.st_size;
                 int out = open(temp,O_WRONLY|O_TRUNC|O_CREAT,0644);
                 assert(out>0);
-                char buf[0x1000];
-                for(;;) {
-                    int amt = xmlNanoFTPRead(ftp, buf, 0x1000);
-                    if(amt==0) break;
-                    assert(amt>0);
-                    write(out,buf,amt);
-                }
-                close(out);            
+                do {
+                    ssize_t amt = sendfile(out,fileno(fp),left);
+                    assert(amt>=0);
+                    left -= amt;
+                } while(left > 0);
+                close(out);
             }
             rename(temp,dest); // doesn't matter if fails
             unlink(temp); // in case it failed
