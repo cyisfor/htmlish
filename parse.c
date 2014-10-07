@@ -269,14 +269,16 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 static void fixDTD(xmlDoc* doc) {
     if(!doc->extSubset) {
         fputs("bokr\n",stderr);
-        xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+        xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.0 Strict//EN",
+                "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
         if(doc->children) {
-            xmlAddPrevSibling(doc->children,dtd);
+            xmlAddPrevSibling(doc->children,(xmlNodePtr)dtd);
             // the above eats the dtd
-            xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
         } else {
-            xmlAddChild(doc,dtd);
+            xmlAddChild((xmlNodePtr)doc,(xmlNodePtr)dtd);
+            // the above will eat the dtd once you add another child
         }
+        xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
     }
 }
 
