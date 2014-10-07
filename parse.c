@@ -115,7 +115,6 @@ static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
     if(ctx->inParagraph) {
         xmlAddChild(ctx->e,thingy);
     } else {
-        fputs("bork\n",stderr);
         assert(xmlAddNextSibling(ctx->e,thingy));
         ctx->e = thingy;
     }
@@ -216,7 +215,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
             case XML_ENTITY_REF_NODE:
                 fprintf(stderr,"Entity boo %s\n",e->name);
         };
-        fprintf(stderr,"e type %d\n",e->type);
         switch(e->type) {
         case XML_TEXT_NODE:
             // if this is a text node, it doesn't matter whether the previous text node
@@ -229,7 +227,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
             break;
         case XML_ELEMENT_NODE:
             { 
-                fprintf(stderr,"node name %s\n",e->name);
                 bool fakeElement = 
                 0 == LITCMP(e->name,"title") ||
                     0 == LITCMP(e->name,"meta");
@@ -263,7 +260,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                 }
             }
         default:
-            fputs("def\n",stderr);
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
         e = next;
@@ -287,13 +283,14 @@ xmlDoc* readFunky(int fd, const char* content) {
         if(entity) return entity;
         entity = xmlGetDtdEntity(ctx->myDoc, name);
         if(entity) return entity;
-        fprintf(stderr,"Warning: jury rigging entity %s\n",name);
         if(!ctx->myDoc->extSubset) {
-            xmlAddChild(ctx->myDoc,xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"));
+            xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+            xmlAddNextSibling(ctx->myDoc->children,dtd);
             entity = xmlGetDtdEntity(ctx->myDoc, name);
             if(entity) return entity;
         }
                     
+        fprintf(stderr,"Warning: jury rigging entity %s\n",name);
         xmlAddDtdEntity(ctx->myDoc,
                 name,
                 XML_INTERNAL_GENERAL_ENTITY,
