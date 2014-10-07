@@ -210,6 +210,9 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
     xmlNode* e = root->children;
     while(e) {
         xmlNode* next = e->next;
+        if(e->type == XML_ENTITY_NODE)
+            fprintf(stderr,"Entity boo %s\n",e->name);
+        fprintf(stderr,"e type %d\n",e->type);
         switch(e->type) {
         case XML_TEXT_NODE:
             // if this is a text node, it doesn't matter whether the previous text node
@@ -221,7 +224,9 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-            { bool fakeElement = 
+            { 
+                fprintf(stderr,"node name %s\n",e->name);
+                bool fakeElement = 
                 0 == LITCMP(e->name,"title") ||
                     0 == LITCMP(e->name,"meta");
                 if(!fakeElement) {
@@ -279,14 +284,14 @@ xmlDoc* readFunky(int fd, const char* content) {
         if(entity) return entity;
         fprintf(stderr,"Warning: jury rigging entity %s\n",name);
         if(!ctx->myDoc->extSubset)
-            xmlNewDtd(ctx->myDoc, "root", "derp", "derp.dtd");
-        xmlAddDtdEntity(ctx->myDoc,
+            xmlCreateIntSubset(ctx->myDoc, "root", "derp", "derp.dtd");
+        xmlAddDocEntity(ctx->myDoc,
                 name,
                 XML_INTERNAL_GENERAL_ENTITY,
-                "root",
-                "root",
+                "derp",
+                "derp.dtd",
                 name);
-        return xmlGetDtdEntity(ctx->myDoc, name);
+        return xmlGetDocEntity(ctx->myDoc, name);
     }
     ctx->sax->getEntity = newGetEntity;
 
@@ -310,6 +315,10 @@ xmlDoc* readFunky(int fd, const char* content) {
         fprintf(stderr,"Warning: not well formed.\n");
     }
     xmlFreeParserCtxt(ctx);
+    FILE* derp = fopen("/tmp/aoeu.xml","wt");
+    xmlDocDump(derp,doc);
+    fclose(derp);
+    //exit(23);
     return doc;
 }
 static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
