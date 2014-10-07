@@ -315,7 +315,7 @@ xmlDoc* readFunky(int fd, const char* content) {
                 name);
         return xmlGetDtdEntity(ctx->myDoc, name);
 #else /* FIREFOX_DOES_NOT_SUCK */
-        fprintf(stderr,"Firefox sucks, sorry!\nIt forces you not to use utf-8 documents with a doctype, so no external entities allowed, only &amp; &gt; and &lt;.\nPlease edit your document and remove all entities, replacing them with unicode characters, then save in utf-8 format.\nOffending file/content: %s",content);
+        fprintf(stderr,"***************************************************\nFirefox sucks, sorry!\nIt forces you not to use utf-8 documents with a doctype, so no external entities allowed, only &amp; &gt; and &lt;.\nPlease edit your document and remove all entities, replacing them with unicode characters, then save in utf-8 format.\n***************************************************\nOffending file/content: %s\n***************************************************\n",content);
         exit(23);
 #endif /* FIREFOX_DOES_NOT_SUCK */
     }
@@ -601,7 +601,7 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
-    xmlDoc* doc = readFunky(0,"<stdin>");
+    xmlDoc* doc = readFunky(0,"<main htmlish markup>");
     assert(doc);
 
     xmlDoc* output;
