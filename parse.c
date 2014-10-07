@@ -288,21 +288,21 @@ xmlDoc* readFunky(int fd, const char* content) {
         entity = xmlGetDtdEntity(ctx->myDoc, name);
         if(entity) return entity;
         fprintf(stderr,"Warning: jury rigging entity %s\n",name);
-        if(!ctx->myDoc->extSubset)
-            xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+        if(!ctx->myDoc->extSubset) {
+            xmlAddChild(ctx->myDoc,xmlNewDtd(ctx->myDoc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"));
+            entity = xmlGetDtdEntity(ctx->myDoc, name);
+            if(entity) return entity;
+        }
                     
         xmlAddDtdEntity(ctx->myDoc,
                 name,
                 XML_INTERNAL_GENERAL_ENTITY,
-                "derp",
-                "derp.dtd",
+                "-//W3C//DTD XHTML 1.1//EN", 
+                "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd",
                 name);
         return xmlGetDtdEntity(ctx->myDoc, name);
     }
     ctx->sax->getEntity = newGetEntity;
-
-    fprintf(stderr,"derp %p %p\n",ctx->sax,ctx->userData);
-    kill(SIGTSTP,getpid());
 
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
     if(fd<0) {
