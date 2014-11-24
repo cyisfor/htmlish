@@ -275,14 +275,21 @@ static void fixDTD(xmlDoc* doc) {
         xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.0 Strict//EN",
                 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
 #ifdef FIREFOX_DOES_NOT_SUCK
+        bool eaten = false;
         if(doc->children) {
-            xmlAddPrevSibling(doc->children,(xmlNodePtr)dtd);
-            // the above eats the dtd
+            if(doc->children->type != XML_DTD_NODE) {
+                xmlAddPrevSibling(doc->children,(xmlNodePtr)dtd);
+                // the above eats the dtd
+                eaten = true;
+            }
         } else {
             xmlAddChild((xmlNodePtr)doc,(xmlNodePtr)dtd);
             // the above will eat the dtd once you add another child
+            eaten = true;
         }
-        xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+        if(eaten) {
+            xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+        }
 #endif /* FIREFOX_DOES_NOT_SUCK */
     }
 }
