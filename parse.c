@@ -105,6 +105,7 @@
 
 struct ishctx {
     xmlNode* e;
+    xmlNs* ns;
     bool inParagraph;
     bool endedNewline;
 };
@@ -130,7 +131,7 @@ static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
             newthingy(ctx,xmlNewComment(buf));
         }
         xmlNodeAddContentLen(ctx->e,"\n",1);
-        newthingy(ctx,xmlNewNode(NULL,"p"));
+        newthingy(ctx,xmlNewNode(ctx->ns,"p"));
         //xmlSetProp(ctx->e,"where",where);
         xmlNodeAddContentLen(ctx->e,"\n",1);
         ctx->inParagraph = true;
@@ -296,7 +297,7 @@ static void fixDTD(xmlDoc* doc) {
 
 #define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" \
-    "<html>"
+    "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
 
 #define FOOTER "</html>"
 
@@ -412,7 +413,7 @@ xmlNode* findOrCreate(xmlNode* parent, const char* path) {
     static char name[0x100];
     memcpy(name,path,next-path);
     name[next-path] = 0;
-    xmlNode* new = xmlNewNode(NULL,name);
+    xmlNode* new = xmlNewNode(parent->ns,name);
     xmlAddChild(parent,new);
     return findOrCreate(new,next);
 }
@@ -460,8 +461,8 @@ struct dostylederp {
     bool found;
 };
 
-xmlNode* createStyle(struct dostylederp* derp) {
-    xmlNode* style = xmlNewNode(NULL,"link");
+xmlNode* createStyle(xmlNs* ns, struct dostylederp* derp) {
+    xmlNode* style = xmlNewNode(ns,"link");
     xmlSetProp(style,"href",derp->url);
     xmlSetProp(style,"rel","stylesheet");
     xmlSetProp(style,"type","text/css");
@@ -483,7 +484,7 @@ void doStyle2(xmlNode* target, void* ctx) {
     derp->found = true;
 
     if(derp->hasContents) {
-        xmlReplaceNode(target,createStyle(derp));
+        xmlReplaceNode(target,createStyle(target->ns,derp));
     } else {
         xmlUnlinkNode(target);
     }
@@ -634,6 +635,7 @@ int main(void) {
     };
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
+    ctx->ns = root->ns;
     processRoot(&ctx,root);
 
     doByFile(output,"header");
@@ -641,7 +643,7 @@ int main(void) {
     doByFile(output,"footer");
     xmlNode *ohead = fuckXPath(oroot,"head");
     if(ohead == NULL) {
-        ohead = xmlNewNode(NULL,"head");
+        ohead = xmlNewNode(ctx->ns,"head");
         if(root->children) {
             xmlAddPrevSibling(oroot->children,ohead);
         } else {

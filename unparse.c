@@ -1,5 +1,7 @@
+#include "input.h"
+
 #include <libxml/tree.h>
-#include <libxml/HTMLParser.h>
+#include <libxml/HTMLparser.h>
 
 #include <stdio.h>
 
@@ -15,16 +17,19 @@ inline void printCollapseWhitespace(xmlChar* s) {
                 // current is space, go past the spaces
                 while(isspace(*++s)) ;
                 putchar(' ');
+                continue;
             default:
                 // print, then increment
                 putchar(*s++);
         };
     }
-    putchar('\n\n');
+    putchar('\n');
+    putchar('\n');
 }
 
 int main(void) {
     xmlBufferPtr buf = xmlBufferCreateSize(1024);
+    setupInput();
     htmlDocPtr doc = htmlReadFd(0, "stdin.html", "utf-8", HTML_PARSE_RECOVER | HTML_PARSE_NOBLANKS);
     
     void showParagraph(xmlNodePtr p) {
@@ -37,27 +42,29 @@ int main(void) {
         printCollapseWhitespace(content);
         xmlFree(content);
     }
-        
 
-
-inline void showDocument(xmlNodePtr cur) {
-    while(cur) {
-        switch(cur->type) {
-            case XML_ELEMENT_NODE:
-                if(0==strncmp("p",cur->name,1)) {
-                    showParagraph(cur);
-                } else {
-                    showDocument(cur->children);
-                }
-            break;
+    void showDocument(xmlNodePtr cur) {
+        while(cur) {
+            switch(cur->type) {
+                case XML_HTML_DOCUMENT_NODE:
+                    return showDocument(cur->children);
+                case XML_ELEMENT_NODE:
+                    {
+                    if(0==strncmp("p",cur->name,1)) {
+                        showParagraph(cur);
+                    } else {
+                        showDocument(cur->children);
+                    }
+                    }
+                    break;
+            };
+            cur = cur->next;
         }
     }
-}
 
-
-
-
-    xmlNodePtr root = (xmlNodePtr)doc;
-    showDocument(root);
+    puts("-----------------------------------");
+    xmlSaveFile("-",doc);
+    puts("-----------------------------------");
+    showDocument((xmlNodePtr)doc);
     return 0;
 }
