@@ -295,6 +295,47 @@ static void fixDTD(xmlDoc* doc) {
     }
 }
 
+void libxml2SUCKS(xmlNode* cur) {
+    /* libxml2 is stupid about namespaces. 
+     * When you copy a node from one document to another, it does not adjust the namespaces to accomodate. That results in a document along the lines of
+     * <html xmlns="somecrappylongurlthatispointless">...<i xmlns="theothernamespaceintheolddocument">italic</i>...</html>
+     *
+     * The xmlns attribute is moronic in of itself, but it is necessary to just blindly leak any
+     * namespaces in the old document (since they can't be freed without guaranteeing double frees)
+     * so it doesn't pollute the new document with xmlns all over the place.
+     *
+     * That's not all. libxml2 is moronic about namespaces in that it does not consult a lookup table
+     * to produce a namespace by URL. So despite URLs being unique identifiers for namespaces, it 
+     * ignores that and just creates namespaces as they're needed to be created during parsing.
+     *
+     * That means you end up with (and I kid you not) XML like this:
+     * <html xmlns="http://www.w3.org/1999/xhtml"> ... <i xmlns="http://www.w3.org/1999/xhtml">italic</i> ...</html>
+     *
+     * That's right. libxml2 will set the xmlns attribute for child nodes in the SAME NAMESPACE AS
+     * THE PARENT. Because libxml2 doesn't use a lookup table, and there's no way to tell the parser
+     * which namespace object to use, when you parse one document in a namespace, then parse another 
+     * document in the exact same namespace, they will have DIFFERENT namespace objects, with the same URL.
+     * So libxml2 sees a child node with a different namespace object in memory and assumes the URL
+     * must be different (despite denying the capability to reuse namespace objects) and dutifully
+     * sets the xmlns attribute... to the same namespace as it's already in.
+     *
+     * Only solutions may be #1: leak all namespace objects in the old document by setting them NULL,
+     * so it doesn't ever set xmlns attributes for any child elements copied over to the new document.
+     * or #2: leak all namespace objects in the old document, by setting them to the namespace of
+     * the new one, but only if the old namespace has the same URL as the new one.
+     * In both cases libxml2 will create a hard coded namespace object for both documents setting it
+     * recursively and this may not be avoided or overridden, so you just have to descend through
+     * the document tree a SECOND time, setting all the namespaces for each element to NULL or whatever.
+     *
+     * And what the hell is nsDef? Off with its head!
+     */
+    if(cur==NULL) return;
+    cur->ns = NULL;
+    cur->nsDef = NULL;
+    libxml2SUCKS(cur->children);
+    libxml2SUCKS(cur->next);
+}
+
 #define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" \
     "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
@@ -307,8 +348,8 @@ xmlDoc* readFunky(int fd, const char* content) {
     char buf[BUFSIZE];
     ctx = xmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml");
-    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT|XML_PARSE_DTDLOAD);
     assert(ctx);
+    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT|XML_PARSE_DTDLOAD);
     xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
     if(fd<0) {
         xmlParseChunk(ctx,content,strlen(content),0);
@@ -326,6 +367,7 @@ xmlDoc* readFunky(int fd, const char* content) {
         fprintf(stderr,"Warning: not well formed.\n");
     }
     xmlFreeParserCtxt(ctx);
+    libxml2SUCKS(doc->children);
     return doc;
 }
 static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
@@ -504,7 +546,7 @@ void doStyle(xmlDoc* output,xmlNode* root, xmlNode* head) {
     if(derp.hasContents && !derp.found) {
         // we have a style sheet, but no place in the template to put the link.
 
-        xmlAddChild(head,createStyle(&derp));
+        xmlAddChild(head,createStyle(head->ns,&derp));
     }
     if(derp.needFree) 
         free((char*)derp.url);
@@ -591,8 +633,6 @@ int main(void) {
 
     setupInput();
 
-    xmlDoc* doc = readFunky(0,"<main htmlish markup>");
-    assert(doc);
 
     xmlDoc* output;
     if(getenv("template")) {
@@ -604,6 +644,9 @@ int main(void) {
     } else {
         output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
+    
+    xmlDoc* doc = readFunky(0,"<main htmlish markup>");
+    assert(doc);
     fixDTD(output);
     xmlNode* oroot = xmlDocGetRootElement(output);
     xmlNode* content = fuckXPath(oroot,"content");
@@ -635,7 +678,7 @@ int main(void) {
     };
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
-    ctx->ns = root->ns;
+    ctx.ns = oroot->ns;
     processRoot(&ctx,root);
 
     doByFile(output,"header");
@@ -643,7 +686,7 @@ int main(void) {
     doByFile(output,"footer");
     xmlNode *ohead = fuckXPath(oroot,"head");
     if(ohead == NULL) {
-        ohead = xmlNewNode(ctx->ns,"head");
+        ohead = xmlNewNode(ctx.ns,"head");
         if(root->children) {
             xmlAddPrevSibling(oroot->children,ohead);
         } else {
