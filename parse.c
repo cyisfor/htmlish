@@ -513,67 +513,12 @@ struct dostylederp {
   bool found;
 };
 
-const uint16_t FILTER_STRENGTH = 0x1000
-typedef uint8_t bloomFilter[FILTER_STRENGTH];
-
-bloomFilter urlmem = {};
-
-inline bool seen(bloomFilter* filter, const char* url) {
-  // an extremely terrible bloom filter to stop repeated elements
-  // so like
-  // <stylesheet>style.css</stylesheet> <stylesheet>style.css</stylesheet>
-  
-  // XXX: may unexpectedly match for two different elements, should have
-  // a strong hash w/ buckets behind this.
-  
-  const char* c = url;
-  bool match = true;
-
-  /* f = 01101101, m = 01001001 = true so 
-     if filter has 1 and match has 1
-     if filter has 0 and match has 0
-     if filter has 1 and match has 0 - false positive here
-     = true
-     if filter has 0 and match has 1 
-     = false
-
-      00001111 doesn't match 00110011 so make filter 00111111 for next time  
-      
-      truth tables suck, so if(f|m == f) is the one we want.
-
-  if true for all char-pieces in url, then true overall, otherwise false
-  (and set, if false) 
-*/
-
-  int i = 0;
-  
-  for(;*c;++c,++i) {
-    if(i == FILTER_STRENGTH)
-      i = 0;
-    if(filter[i] != *c | filter[i]) {
-      filter[i] |= *c
-      match = false;
-      // keep going though, so that we remember this URL
-      // for next time
-    }
-  }
-  // now try to make sure style doesn't make sty match
-  for(;i<FILTER_STRENGTH;++i) {
-    // if 0 == (~0b | filter[i])
-    // if 0 == 0xff | filter[i]
-    // if 0 == filter[i]
-    if(0==filter[i])
-  return match;
-}
-
 void createStyle(xmlNode* head, const char* url) {
-  if(seen(urlmem,url)) return;
-    xmlNode* style = xmlNewNode(head->ns,"link");
-    xmlSetProp(style,"href",url);
-    xmlSetProp(style,"rel","stylesheet");
-    xmlSetProp(style,"type","text/css");
-    xmlAddChild(head,createStyle(head->ns,&derp));
-    return style;
+  xmlNode* style = xmlNewNode(head->ns,"link");
+  xmlSetProp(style,"href",url);
+  xmlSetProp(style,"rel","stylesheet");
+  xmlSetProp(style,"type","text/css");
+  xmlAddChild(head,style);
 }
 
 /* Remove a <stylesheet/> fake node from the source document
@@ -583,26 +528,18 @@ void createStyle(xmlNode* head, const char* url) {
  * TODO: strip whitespace on either side of the URL
  */
 
-static void findStyle(xmlNode* target, void* ctx) {
-    struct dostylederp* derp = (struct dostylederp*)ctx;
-    if(!derp->hasContents) {
-        derp->hasContents = true;
-        derp->url = strdup(target->children[0].content);
-        derp->needFree = true;
-    }
-    xmlUnlinkNode(target);
+static void removeStylesheets(xmlNode* target, void* ctx) {
+  xmlNode* head = (xmlNode*) ctx;
+  createStyle(head,target->children[0].content);
+  xmlUnlinkNode(target);
 }
 
-void doStyle2(xmlNode* target, void* ctx) {
-    struct dostylederp* derp = (struct dostylederp*)ctx;
-    derp->found = true;
-
-    if(derp->hasContents) {
-        xmlReplaceNode(target,createStyle(target->ns,derp));
-    } else {
-        xmlUnlinkNode(target);
-    }
-    // xmlFreeNode(target);
+static void moveToNew(xmlNode* old, void* ctx) {
+  xmlNode* head = (xmlNode*) ctx;
+  xmlNode* new = xmlNewNode(head->ns, old->name);
+  xmlCopyPropList(new,old->properties);
+  xmlAddChild(head,new);
+  xmlUnlinkNode(old);
 }
 
 /* add styles from the environment, from <stylesheet/> tags and from
@@ -611,26 +548,13 @@ void doStyle2(xmlNode* target, void* ctx) {
  */
 
 void doStyle(xmlDoc* output,xmlNode* root, xmlNode* head) {
-  struct dostylederp derp = { head, ... };
   const char* envstyle = getenv("style");
   if(envstyle) {
-    
-    
-    struct dostylederp derp = { contents, contents != NULL, false, false };
-    if(!derp.hasContents) {
-        foreachNode(root,"stylesheet",findStyle,&derp);
-        // if(!derp.hasContents) whocares();
-    }
+    createStyle(head,envstyle);
+  }
 
-    foreachNode(root,"style",doStyle2,&derp);
-
-    if(derp.hasContents && !derp.found) {
-        // we have a style sheet, but no place in the template to put the link.
-
-        xmlAddChild(head,createStyle(head->ns,&derp));
-    }
-    if(derp.needFree) 
-        free((char*)derp.url);
+  foreachNode(root,"stylesheet",removeStylesheets,head);
+  foreachNode(root,"link",moveToNew,head);
 }
 
 static void doIntitle2(xmlNode* target, void* ctx) {
