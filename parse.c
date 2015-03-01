@@ -113,8 +113,6 @@ struct ishctx {
     bool endedNewline;
 };
 
-xmlNode* currentAdderThingy = NULL;
-
 bool debugging = false;
 
 static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
@@ -153,6 +151,52 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     }
 }
 
+
+static xmlNode* getContent(xmlNode* oroot, bool createBody) {
+  xmlNode* content = fuckXPath(oroot,"content");  
+  if(content) {
+    xmlNode* text = xmlNewText("");
+    xmlReplaceNode(content,text);
+    xmlFreeNode(content);
+    content = text;
+  } else {
+    content = fuckXPathDivId(oroot,"content");
+    if(content) {
+      if(content->children == NULL) {
+        xmlNode* text = xmlNewTextLen("",0);
+        assert(text);
+        xmlAddChild(content,text);                
+      }
+      content = content->children;
+      assert(content);
+    } else if(false == createBody) {
+      content = oroot;
+    } else {
+      xmlNode* body = findOrCreate(oroot,"body");
+      assert(body != NULL);
+      content = body->children;
+    }
+  }
+  return content;
+}
+
+static void processRoot(struct ishctx* ctx, xmlNode* root);
+
+static void maybeHish(xmlNode* e, struct ishctx* ctx) {
+  if(xmlHasProp(e,"hish")) {
+    fprintf(stderr,"Hish weeeeee\n");
+    xmlUnsetProp(e,"hish");
+    /* process the contents of this node like the root one */
+    struct ishctx subctx = {
+      .endedNewline = false,
+      .e = ctx->e,
+      .ns = ctx->ns,
+    };
+    processRoot(&subctx,e);
+  }
+}
+  
+
 static void processText(struct ishctx* ctx, xmlChar* text) {
     if(!*text) return;
 
@@ -188,6 +232,9 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
             for(c=start;c!=end;++c) {
                 if(!isspace(*c)) {
                     //only add a paragraph if it isn't ALL spaces
+                  if(debugging) {
+                    fprintf(stderr,"uhhh %d\n",end-start);
+                  }
                     maybeStartParagraph(ctx,"middle");
                     first = false;
                     xmlNodeAddContentLen(ctx->e,start,end-start);
@@ -243,11 +290,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
               if(blockElement) {
                 // no need to start (or have) a paragraph. This element is huge.
                 maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
-                if(xmlHasProp(e->properties,"hish")) {
-                  /* process the contents of this node like the root one */
-                  /* make a new context? */
-                  processRoot(ctx,e);
-                }
+                maybeHish(e,ctx);
               } else {
                 //start a paragraph if this element is a wimp
                 //but only if the last text node ended on a newline.
@@ -618,7 +661,7 @@ static void doMetas(xmlNode* root, xmlNode* head) {
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
     "<head><title/><header/></head>\n"
-    "<body><h1><intitle/></h1><top/><content/><footer/></body></html>";
+  "<body><h1><intitle/></h1><top/><content/><footer/></body></html>";
 
 int main(void) {
 
@@ -646,30 +689,8 @@ int main(void) {
     assert(doc);
     fixDTD(output);
     xmlNode* oroot = xmlDocGetRootElement(output);
-    xmlNode* content = fuckXPath(oroot,"content");
-    if(content) {
-        xmlNode* text = xmlNewText("");
-        xmlReplaceNode(content,text);
-        xmlFreeNode(content);
-        content = text;
-    } else {
-        content = fuckXPathDivId(oroot,"content");
-
-        if(content) {
-            if(content->children == NULL) {
-                xmlNode* text = xmlNewTextLen("",0);
-                assert(text);
-                xmlAddChild(content,text);                
-            }
-            content = content->children;
-            assert(content);
-        } else {
-            xmlNode* body = findOrCreate(oroot,"body");
-            assert(body != NULL);
-            content = body->children;
-        }
-    }
-    struct ishctx ctx = {
+    xmlNode* content = getContent(oroot);
+      struct ishctx ctx = {
         .endedNewline = false,
         .e = content
     };
