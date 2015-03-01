@@ -547,7 +547,7 @@ static void moveToNew(xmlNode* old, void* ctx) {
  * TODO: coalesce <style/> tags into an external stylesheet
  */
 
-void doStyle(xmlDoc* output,xmlNode* root, xmlNode* head) {
+void doStyle(xmlNode* root, xmlNode* head) {
   const char* envstyle = getenv("style");
   if(envstyle) {
     createStyle(head,envstyle);
@@ -561,8 +561,8 @@ static void doIntitle2(xmlNode* target, void* ctx) {
     xmlReplaceNode(target,xmlNewText(ctx));
 }
 
-void doIntitle(xmlDoc* output, xmlNode* root, const char* title) {
-    foreachNode(root,"intitle",doIntitle2,(void*)title);
+void doIntitle(xmlNode* oroot, const char* title) {
+    foreachNode(oroot,"intitle",doIntitle2,(void*)title);
 }
 
 struct titleseeker {
@@ -579,7 +579,7 @@ static void eliminateTitles(xmlNode* target, void* ctx) {
     //xmlFreeNode(target);
 }
 
-void doTitle(xmlDoc* output, xmlNode* root, xmlNode* head) {
+void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
     const char* contents = getenv("title");
 
     struct titleseeker ts;
@@ -594,7 +594,8 @@ void doTitle(xmlDoc* output, xmlNode* root, xmlNode* head) {
     xmlNode* title = findOrCreate(head,"title");
     xmlAddChild(title,xmlNewText(ts.title ? ts.title : contents));
 
-    doIntitle(output, root, ts.title ? ts.title : contents);
+    // this is sneaky, modifies the <intitle/> element discovered with doTitle
+    doIntitle(oroot, ts.title ? ts.title : contents);
     free(ts.title);
 }
 
@@ -612,15 +613,8 @@ static void extractMetas(xmlNode* target, void* ctx) {
     ++ms->nmeta;
 }
 
-void doMetas(xmlDoc* output, xmlNode* root, xmlNode* head) {
-    struct metaseeker ms = { NULL, 0 };
-    foreachNode(root,"meta",extractMetas,(void*)&ms);
-    int i;
-    for(i=0;i<ms.nmeta;++i) {
-        xmlSetTreeDoc(ms.meta[i],output);
-        xmlAddChild(head,ms.meta[i]);
-    }
-    free(ms.meta);
+static void doMetas(xmlNode* root, xmlNode* head) {
+    foreachNode(root,"meta",moveToNew,head);
 }
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -699,10 +693,14 @@ int main(void) {
             xmlAddChild(oroot,ohead);
         }
     }
-    doTitle(output,oroot,ohead);
-    doMetas(output,oroot,ohead);
-    doStyle(output,oroot,ohead);
+    /* these remove junk from the source document, putting it in the proper
+       places in the output document.
+    */
+    doTitle(oroot,root,ohead);
+    doMetas(root,ohead);
+    doStyle(root,ohead);
 
+    /* all stuff removed, process the whitespace! */
     processRoot(&ctx,root);
 
     xmlSaveFormatFile("-",output,1);
