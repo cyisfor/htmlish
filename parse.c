@@ -537,13 +537,9 @@ inline bool seen(bloomFilter* filter, const char* url) {
      if filter has 0 and match has 1 
      = false
 
-     00001111 doesn't match 00110011 so make filter 00111111 for next time  
-
-f m f^m f|f^m   r 
-0 1   0     0 - 0
-0 0   1     1 - 1
-1 1   1     1 - 1
-1 0   0     1 - 1
+      00001111 doesn't match 00110011 so make filter 00111111 for next time  
+      
+      truth tables suck, so if(f|m == f) is the one we want.
 
   if true for all char-pieces in url, then true overall, otherwise false
   (and set, if false) 
@@ -554,7 +550,7 @@ f m f^m f|f^m   r
   for(;*c;++c,++i) {
     if(i == FILTER_STRENGTH)
       i = 0;
-    if(0 == (~*c) | filter[i]) {
+    if(filter[i] != *c | filter[i]) {
       filter[i] |= *c
       match = false;
       // keep going though, so that we remember this URL
