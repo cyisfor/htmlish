@@ -103,6 +103,9 @@
  * second, 
  */
 
+/* Should be able to perform this whitespace processing inside other elements,
+   maybe if they're given a special attribute to indicate it */
+
 struct ishctx {
     xmlNode* e;
     xmlNs* ns;
@@ -229,10 +232,12 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-            { 
+            {
+              /* these get elided later, so should be ignored 
+                 for splitting whitespace */
                 bool fakeElement = 
-                0 == LITCMP(e->name,"title") ||
-                    0 == LITCMP(e->name,"meta");
+                  0 == LITCMP(e->name,"title") ||
+                  0 == LITCMP(e->name,"meta");
                 if(!fakeElement) {
                     { bool blockElement = 
                         0 == LITCMP(e->name,"ul") ||
@@ -323,6 +328,7 @@ void libxml2SUCKS(xmlNode* cur) {
      * so it doesn't ever set xmlns attributes for any child elements copied over to the new document.
      * or #2: leak all namespace objects in the old document, by setting them to the namespace of
      * the new one, but only if the old namespace has the same URL as the new one.
+     *
      * In both cases libxml2 will create a hard coded namespace object for both documents setting it
      * recursively and this may not be avoided or overridden, so you just have to descend through
      * the document tree a SECOND time, setting all the namespaces for each element to NULL or whatever.
@@ -489,6 +495,10 @@ static void doByFile2(xmlNode* target, void* ctx) {
     }
 }
 
+/* Add the XML fragment contained in a file, in the place of
+ * a specified placeholder element such as <header/>
+ */
+
 static void doByFile(xmlDoc* output, const char* name) {
     const char* path = getenv(name);
     struct dbfderp derp = { name, path };
@@ -497,19 +507,85 @@ static void doByFile(xmlDoc* output, const char* name) {
 }
 
 struct dostylederp {
-    const char* url;
-    bool hasContents;
-    bool needFree;
-    bool found;
+  xmlNode* outhead;
+  bool hasContents;
+  bool needFree;
+  bool found;
 };
 
-xmlNode* createStyle(xmlNs* ns, struct dostylederp* derp) {
-    xmlNode* style = xmlNewNode(ns,"link");
-    xmlSetProp(style,"href",derp->url);
+const uint16_t FILTER_STRENGTH = 0x1000
+typedef uint8_t bloomFilter[FILTER_STRENGTH];
+
+bloomFilter urlmem = {};
+
+inline bool seen(bloomFilter* filter, const char* url) {
+  // an extremely terrible bloom filter to stop repeated elements
+  // so like
+  // <stylesheet>style.css</stylesheet> <stylesheet>style.css</stylesheet>
+  
+  // XXX: may unexpectedly match for two different elements, should have
+  // a strong hash w/ buckets behind this.
+  
+  const char* c = url;
+  bool match = true;
+
+  /* f = 01101101, m = 01001001 = true so 
+     if filter has 1 and match has 1
+     if filter has 0 and match has 0
+     if filter has 1 and match has 0 - false positive here
+     = true
+     if filter has 0 and match has 1 
+     = false
+
+     00001111 doesn't match 00110011 so make filter 00111111 for next time  
+
+f m f^m f|f^m   r 
+0 1   0     0 - 0
+0 0   1     1 - 1
+1 1   1     1 - 1
+1 0   0     1 - 1
+
+  if true for all char-pieces in url, then true overall, otherwise false
+  (and set, if false) 
+*/
+
+  int i = 0;
+  
+  for(;*c;++c,++i) {
+    if(i == FILTER_STRENGTH)
+      i = 0;
+    if(0 == (~*c) | filter[i]) {
+      filter[i] |= *c
+      match = false;
+      // keep going though, so that we remember this URL
+      // for next time
+    }
+  }
+  // now try to make sure style doesn't make sty match
+  for(;i<FILTER_STRENGTH;++i) {
+    // if 0 == (~0b | filter[i])
+    // if 0 == 0xff | filter[i]
+    // if 0 == filter[i]
+    if(0==filter[i])
+  return match;
+}
+
+void createStyle(xmlNode* head, const char* url) {
+  if(seen(urlmem,url)) return;
+    xmlNode* style = xmlNewNode(head->ns,"link");
+    xmlSetProp(style,"href",url);
     xmlSetProp(style,"rel","stylesheet");
     xmlSetProp(style,"type","text/css");
+    xmlAddChild(head,createStyle(head->ns,&derp));
     return style;
 }
+
+/* Remove a <stylesheet/> fake node from the source document
+ * using it to add a <link rel="stylesheet" etc blah/> to the
+ * head of the output document.
+ * <stylesheet>URL</stylesheet> with only 1 text child 
+ * TODO: strip whitespace on either side of the URL
+ */
 
 static void findStyle(xmlNode* target, void* ctx) {
     struct dostylederp* derp = (struct dostylederp*)ctx;
@@ -533,8 +609,17 @@ void doStyle2(xmlNode* target, void* ctx) {
     // xmlFreeNode(target);
 }
 
+/* add styles from the environment, from <stylesheet/> tags and from
+ * <link rel="stylesheet".../> tags, to the <head> of the output document.
+ * TODO: coalesce <style/> tags into an external stylesheet
+ */
+
 void doStyle(xmlDoc* output,xmlNode* root, xmlNode* head) {
-    const char* contents = getenv("style");
+  struct dostylederp derp = { head, ... };
+  const char* envstyle = getenv("style");
+  if(envstyle) {
+    
+    
     struct dostylederp derp = { contents, contents != NULL, false, false };
     if(!derp.hasContents) {
         foreachNode(root,"stylesheet",findStyle,&derp);
@@ -620,7 +705,7 @@ void doMetas(xmlDoc* output, xmlNode* root, xmlNode* head) {
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-    "<head><title/><style/><header/></head>\n"
+    "<head><title/><header/></head>\n"
     "<body><h1><intitle/></h1><top/><content/><footer/></body></html>";
 
 int main(void) {
@@ -679,8 +764,9 @@ int main(void) {
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
     ctx.ns = oroot->ns;
-    processRoot(&ctx,root);
 
+    /* This sets up the template, filling in placeholder elements
+       with the stuff that the environment carries */
     doByFile(output,"header");
     doByFile(output,"top");
     doByFile(output,"footer");
@@ -696,6 +782,8 @@ int main(void) {
     doTitle(output,oroot,ohead);
     doMetas(output,oroot,ohead);
     doStyle(output,oroot,ohead);
+
+    processRoot(&ctx,root);
 
     xmlSaveFormatFile("-",output,1);
     return 0;
