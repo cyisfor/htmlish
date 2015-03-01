@@ -151,6 +151,67 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     }
 }
 
+xmlNode* fuckXPath(xmlNode* parent, const char* name) {
+    if(strcmp(parent->name,name)==0)
+        return parent;
+    xmlNode* cur = parent->children;
+    for(;cur;cur=cur->next) {
+        xmlNode* ret = fuckXPath(cur,name);
+        if(ret)
+            return ret;
+    }
+    return NULL;
+}
+
+xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
+    if(strcmp(parent->name,"div")==0) {
+        const char* test = xmlGetProp(parent,"id");
+        if(test && strcmp(test,id) == 0)
+            return parent;
+    }
+    xmlNode* cur = parent->children;
+    for(;cur;cur=cur->next) {
+        xmlNode* ret = fuckXPathDivId(cur,id);
+        if(ret)
+            return ret;
+    }
+    return NULL;
+}
+void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
+    if(!parent->name) {
+        assert(!parent->children);
+        // we don't process text
+        return;
+    }
+    if(strcmp(parent->name,name)==0)
+        handle(parent,ctx);
+    xmlNode* cur = parent->children;
+    while(cur) {
+        xmlNode* next = cur->next;
+        foreachNode(cur,name,handle,ctx);
+        cur = next;
+    }
+}
+
+xmlNode* findOrCreate(xmlNode* parent, const char* path) {
+    if(*path == 0)
+        return parent;
+
+    const char* next = strchrnul(path,'/');
+    xmlNode* cur = parent->children;
+    for(;cur;cur = cur->next) {
+        if(0==memcmp(cur->name,path,next-path)) {
+            return findOrCreate(cur,next);
+        }
+    }
+
+    static char name[0x100];
+    memcpy(name,path,next-path);
+    name[next-path] = 0;
+    xmlNode* new = xmlNewNode(parent->ns,name);
+    xmlAddChild(parent,new);
+    return findOrCreate(new,next);
+}
 
 static xmlNode* getContent(xmlNode* oroot, bool createBody) {
   xmlNode* content = fuckXPath(oroot,"content");  
@@ -189,7 +250,7 @@ static void maybeHish(xmlNode* e, struct ishctx* ctx) {
     /* process the contents of this node like the root one */
     struct ishctx subctx = {
       .endedNewline = false,
-      .e = ctx->e,
+      .e = getContent(ctx->e,false),
       .ns = ctx->ns,
     };
     processRoot(&subctx,e);
@@ -445,67 +506,6 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
     xmlFreeDoc(doc);
 }
 
-xmlNode* fuckXPath(xmlNode* parent, const char* name) {
-    if(strcmp(parent->name,name)==0)
-        return parent;
-    xmlNode* cur = parent->children;
-    for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPath(cur,name);
-        if(ret)
-            return ret;
-    }
-    return NULL;
-}
-
-xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
-    if(strcmp(parent->name,"div")==0) {
-        const char* test = xmlGetProp(parent,"id");
-        if(test && strcmp(test,id) == 0)
-            return parent;
-    }
-    xmlNode* cur = parent->children;
-    for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPathDivId(cur,id);
-        if(ret)
-            return ret;
-    }
-    return NULL;
-}
-void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
-    if(!parent->name) {
-        assert(!parent->children);
-        // we don't process text
-        return;
-    }
-    if(strcmp(parent->name,name)==0)
-        handle(parent,ctx);
-    xmlNode* cur = parent->children;
-    while(cur) {
-        xmlNode* next = cur->next;
-        foreachNode(cur,name,handle,ctx);
-        cur = next;
-    }
-}
-
-xmlNode* findOrCreate(xmlNode* parent, const char* path) {
-    if(*path == 0)
-        return parent;
-
-    const char* next = strchrnul(path,'/');
-    xmlNode* cur = parent->children;
-    for(;cur;cur = cur->next) {
-        if(0==memcmp(cur->name,path,next-path)) {
-            return findOrCreate(cur,next);
-        }
-    }
-
-    static char name[0x100];
-    memcpy(name,path,next-path);
-    name[next-path] = 0;
-    xmlNode* new = xmlNewNode(parent->ns,name);
-    xmlAddChild(parent,new);
-    return findOrCreate(new,next);
-}
 
 struct dbfderp {
     const char* name;
@@ -689,10 +689,9 @@ int main(void) {
     assert(doc);
     fixDTD(output);
     xmlNode* oroot = xmlDocGetRootElement(output);
-    xmlNode* content = getContent(oroot);
-      struct ishctx ctx = {
+    struct ishctx ctx = {
         .endedNewline = false,
-        .e = content
+        .e = getContent(oroot,true);
     };
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
