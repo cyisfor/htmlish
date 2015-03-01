@@ -691,7 +691,7 @@ int main(void) {
     xmlNode* oroot = xmlDocGetRootElement(output);
     struct ishctx ctx = {
         .endedNewline = false,
-        .e = getContent(oroot,true);
+        .e = getContent(oroot,true)
     };
     xmlNode* root = xmlDocGetRootElement(doc);
     assert(root);
