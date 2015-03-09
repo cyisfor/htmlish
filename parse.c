@@ -115,6 +115,22 @@ struct ishctx {
 
 bool debugging = false;
 
+static xmlNode* copyToNew(xmlNode* old, xmlNode* parent) {
+  xmlNode* new = xmlDocCopyNode(old,parent->doc,1);
+  xmlAddChild(parent,new);
+  return new;
+}
+
+static xmlNode* moveToNew(xmlNode* old, xmlNode* parent) {
+  xmlNode* new = copyToNew(old,parent);
+  xmlUnlinkNode(old);
+  return new;
+}
+static void moveToNewDerp(xmlNode* old, void* ctx) {
+  xmlNode* head = (xmlNode*) ctx;
+  moveToNew(old,head);
+}
+
 static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
     if(ctx->inParagraph) {
         xmlAddChild(ctx->e,thingy);
@@ -243,18 +259,27 @@ static xmlNode* getContent(xmlNode* oroot, bool createBody) {
 
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
-static void maybeHish(xmlNode* e, struct ishctx* ctx) {
+static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
   if(xmlHasProp(e,"hish")) {
-    fprintf(stderr,"Hish weeeeee\n");
+    fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
+    xmlUnlinkNode(e);
+
     xmlUnsetProp(e,"hish");
+    xmlNode* dangling = xmlNewNode(ctx->ns,"derp");
     /* process the contents of this node like the root one */
     struct ishctx subctx = {
       .endedNewline = false,
-      .e = getContent(ctx->e,false),
+      .e = dangling,
       .ns = ctx->ns,
+      .inParagraph = false,
     };
     processRoot(&subctx,e);
+    xmlNode* ne = moveToNew(e,ctx->e);
+    ne->children = dangling->next;
+    xmlUnlinkNode(dangling);
+    return true;
   }
+  return false;
 }
   
 
@@ -351,7 +376,10 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
               if(blockElement) {
                 // no need to start (or have) a paragraph. This element is huge.
                 maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
-                maybeHish(e,ctx);
+                if(maybeHish(e,ctx)) {
+                  e = next;
+                  continue;
+                }
               } else {
                 //start a paragraph if this element is a wimp
                 //but only if the last text node ended on a newline.
@@ -575,14 +603,6 @@ static void removeStylesheets(xmlNode* target, void* ctx) {
   xmlUnlinkNode(target);
 }
 
-static void moveToNew(xmlNode* old, void* ctx) {
-  xmlNode* head = (xmlNode*) ctx;
-  xmlNode* new = xmlNewNode(head->ns, old->name);
-  xmlCopyPropList(new,old->properties);
-  xmlAddChild(head,new);
-  xmlUnlinkNode(old);
-}
-
 /* add styles from the environment, from <stylesheet/> tags and from
  * <link rel="stylesheet".../> tags, to the <head> of the output document.
  * TODO: coalesce <style/> tags into an external stylesheet
@@ -595,7 +615,7 @@ void doStyle(xmlNode* root, xmlNode* head) {
   }
 
   foreachNode(root,"stylesheet",removeStylesheets,head);
-  foreachNode(root,"link",moveToNew,head);
+  foreachNode(root,"link",moveToNewDerp,head);
 }
 
 static void doIntitle2(xmlNode* target, void* ctx) {
@@ -655,7 +675,7 @@ static void extractMetas(xmlNode* target, void* ctx) {
 }
 
 static void doMetas(xmlNode* root, xmlNode* head) {
-    foreachNode(root,"meta",moveToNew,head);
+    foreachNode(root,"meta",moveToNewDerp,head);
 }
 
 const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
