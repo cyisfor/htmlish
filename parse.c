@@ -6,16 +6,20 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
+#include <libxml/HTMLtree.h>
+#include <libxml/HTMLparser.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <ctype.h> //isspace
+#include <unistd.h> //read, close
 
 /* if a line is blank, a paragraph follows, or a block element.
  * so, after processText, if it ends in \n, set a flag to check the next element.
- * when the next element is a text node, or like <u> or an <i>, start a paragraph, 
+ * when the next element is a text node, or like <u> or an <i>, start a paragraph,
  * then add it to the paragraph.
  * when it's a <blockquote> or an <ul> add it without starting a paragraph.
  *
@@ -63,10 +67,10 @@
  *     if B is text and C is text
  *       (text, text ? bleah!)
  *       B = append(B,C)
- *     else 
+ *     else
  *       break
  *   if A is file start (state 5)
- *     if B is element continue    
+ *     if B is element continue
  *     if C is file end (state 5,7)
  *       makeP(B)
  *       break done
@@ -95,12 +99,12 @@
  *         makeP(A,B)
  *         break done
  *   else (states 1, 3)
- *     if B is element 
+ *     if B is element
  *   if A,B is state (1,3,7,8) continue
  *   if A,B is state 2
  *
  * first, check if starting state ends in element, do nothing
- * second, 
+ * second,
  */
 
 /* Should be able to perform this whitespace processing inside other elements,
@@ -230,7 +234,7 @@ xmlNode* findOrCreate(xmlNode* parent, const char* path) {
 }
 
 static xmlNode* getContent(xmlNode* oroot, bool createBody) {
-  xmlNode* content = fuckXPath(oroot,"content");  
+  xmlNode* content = fuckXPath(oroot,"content");
   if(content) {
     xmlNode* text = xmlNewText("");
     xmlReplaceNode(content,text);
@@ -242,7 +246,7 @@ static xmlNode* getContent(xmlNode* oroot, bool createBody) {
       if(content->children == NULL) {
         xmlNode* text = xmlNewTextLen("",0);
         assert(text);
-        xmlAddChild(content,text);                
+        xmlAddChild(content,text);
       }
       content = content->children;
       assert(content);
@@ -281,7 +285,7 @@ static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
   }
   return false;
 }
-  
+
 
 static void processText(struct ishctx* ctx, xmlChar* text) {
     if(!*text) return;
@@ -293,11 +297,10 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
         // starts blank, so be sure to start a new paragraph.
         maybeEndParagraph(ctx,"start");
     }
-
     for(;;) {
         end = strchrnul(start,'\n');
         if(*end == 0) {
-            if(*start != 0) {                 
+            if(*start != 0) {
                 // only start a paragraph once we're sure we got something to put in it.
                 xmlChar* c;
                 for(c=start;c!=end;++c) {
@@ -310,8 +313,8 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                 }
             }
             return;
-        } 
-            
+        }
+
         if(start!=end) {
             // only start a paragraph once we're sure we got something to put in it.
             xmlChar* c;
@@ -365,8 +368,8 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-          
-          { bool blockElement = 
+
+          { bool blockElement =
                 0 == LITCMP(e->name,"ul") ||
                 0 == LITCMP(e->name,"ol") ||
                 0 == LITCMP(e->name,"p") || // inception
@@ -385,9 +388,9 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                 //but only if the last text node ended on a newline.
                 //otherwise the last text node and this should be in the same
                 //paragraph
-                if(ctx->endedNewline) { 
+                if(ctx->endedNewline) {
                   static char buf[0x100] = "";
-                  if(debugging) 
+                  if(debugging)
                     snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
                   maybeEndParagraph(ctx,buf);
                   // make sure this wimp is in the paragraph, not before it.
@@ -396,7 +399,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                 }
               }
           }
-                  
+
         default:
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
@@ -407,6 +410,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 #define FIREFOX_DOES_NOT_SUCK
 
 static void fixDTD(xmlDoc* doc) {
+  return;
     if(!doc->extSubset) {
         xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.0 Strict//EN",
                 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
@@ -431,7 +435,7 @@ static void fixDTD(xmlDoc* doc) {
 }
 
 void libxml2SUCKS(xmlNode* cur) {
-    /* libxml2 is stupid about namespaces. 
+    /* libxml2 is stupid about namespaces.
      * When you copy a node from one document to another, it does not adjust the namespaces to accomodate. That results in a document along the lines of
      * <html xmlns="somecrappylongurlthatispointless">...<i xmlns="theothernamespaceintheolddocument">italic</i>...</html>
      *
@@ -440,7 +444,7 @@ void libxml2SUCKS(xmlNode* cur) {
      * so it doesn't pollute the new document with xmlns all over the place.
      *
      * That's not all. libxml2 is moronic about namespaces in that it does not consult a lookup table
-     * to produce a namespace by URL. So despite URLs being unique identifiers for namespaces, it 
+     * to produce a namespace by URL. So despite URLs being unique identifiers for namespaces, it
      * ignores that and just creates namespaces as they're needed to be created during parsing.
      *
      * That means you end up with (and I kid you not) XML like this:
@@ -448,7 +452,7 @@ void libxml2SUCKS(xmlNode* cur) {
      *
      * That's right. libxml2 will set the xmlns attribute for child nodes in the SAME NAMESPACE AS
      * THE PARENT. Because libxml2 doesn't use a lookup table, and there's no way to tell the parser
-     * which namespace object to use, when you parse one document in a namespace, then parse another 
+     * which namespace object to use, when you parse one document in a namespace, then parse another
      * document in the exact same namespace, they will have DIFFERENT namespace objects, with the same URL.
      * So libxml2 sees a child node with a different namespace object in memory and assumes the URL
      * must be different (despite denying the capability to reuse namespace objects) and dutifully
@@ -472,32 +476,36 @@ void libxml2SUCKS(xmlNode* cur) {
     libxml2SUCKS(cur->next);
 }
 
-#define HEADER "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
-    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" \
-    "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
+#define HEADER "<!DOCTYPE html>\n" \
+    "<html><body>"
 
-#define FOOTER "</html>"
+#define FOOTER "</body></html>"
 
 #define BUFSIZE 0x1000
 xmlDoc* readFunky(int fd, const char* content) {
-    xmlParserCtxtPtr ctx;
+    htmlParserCtxtPtr ctx;
     char buf[BUFSIZE];
-    ctx = xmlCreatePushParserCtxt(NULL, NULL,
-                                   "",0,"htmlish.xml");
+    ctx = htmlCreatePushParserCtxt(NULL, NULL,
+                                   "",0,"htmlish.xml",
+								   XML_CHAR_ENCODING_UTF8);
     assert(ctx);
-    xmlCtxtUseOptions(ctx,XML_PARSE_NOENT|XML_PARSE_DTDLOAD);
-    xmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
+    htmlCtxtUseOptions(ctx,
+					   HTML_PARSE_NONET |
+					   HTML_PARSE_COMPACT |
+					   HTML_PARSE_RECOVER
+					   );
+    htmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
     if(fd<0) {
-        xmlParseChunk(ctx,content,strlen(content),0);
+        htmlParseChunk(ctx,content,strlen(content),0);
     } else {
         for(;;) {
             ssize_t amt = read(fd,buf,BUFSIZE);
             if(amt<=0) break;
-            xmlParseChunk(ctx, buf, amt, 0);
+            htmlParseChunk(ctx, buf, amt, 0);
         }
     }
 
-    xmlParseChunk(ctx,FOOTER,sizeof(FOOTER)-1, 1);
+    htmlParseChunk(ctx,FOOTER,sizeof(FOOTER)-1, 1);
     xmlDoc* doc = ctx->myDoc;
     if(!ctx->wellFormed) {
         fprintf(stderr,"Warning: not well formed.\n");
@@ -513,11 +521,11 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
     xmlDoc* doc = readFunky(inp,path);
     close(inp);
     if(!doc) {
-        fprintf(stderr,"Couldn't parse %s",path);            
+        fprintf(stderr,"Couldn't parse %s",path);
         exit(5);
     }
     xmlNode* root = xmlDocGetRootElement(doc);
-    xmlNode* cur = root;
+    xmlNode* cur = root;  // body
     nodes->nodeNr = 0;
     for(;cur;cur = cur->next) {
         ++nodes->nodeNr;
@@ -593,7 +601,7 @@ void createStyle(xmlNode* head, const char* url) {
 /* Remove a <stylesheet/> fake node from the source document
  * using it to add a <link rel="stylesheet" etc blah/> to the
  * head of the output document.
- * <stylesheet>URL</stylesheet> with only 1 text child 
+ * <stylesheet>URL</stylesheet> with only 1 text child
  * TODO: strip whitespace on either side of the URL
  */
 
@@ -629,7 +637,7 @@ void doIntitle(xmlNode* oroot, const char* title) {
 struct titleseeker {
     char* title;
 };
-    
+
 static void eliminateTitles(xmlNode* target, void* ctx) {
     struct titleseeker* ts = (struct titleseeker*) ctx;
     if(ts->title == NULL && target->children) {
@@ -700,20 +708,23 @@ int main(void) {
         if(!output) {
             fprintf(stderr,"Error: template failed... not sure if well formed or not.\n");
             exit(2);
-        }        
+        }
     } else {
         output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
     }
-    
+
     xmlDoc* doc = readFunky(0,"<main htmlish markup>");
     assert(doc);
     fixDTD(output);
     xmlNode* oroot = xmlDocGetRootElement(output);
     struct ishctx ctx = {
         .endedNewline = false,
-        .e = getContent(oroot,true)
+        .e = getContent(oroot,false)
     };
     xmlNode* root = xmlDocGetRootElement(doc);
+	assert(root);
+	// html/body
+	root = root->children;
     assert(root);
     ctx.ns = oroot->ns;
 
@@ -741,6 +752,6 @@ int main(void) {
     /* all stuff removed, process the whitespace! */
     processRoot(&ctx,root);
 
-    xmlSaveFormatFile("-",output,1);
+    htmlSaveFileFormat("-",output,"utf-8",1);
     return 0;
 }
