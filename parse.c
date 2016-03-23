@@ -407,33 +407,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
     }
 }
 
-#define FIREFOX_DOES_NOT_SUCK
-
-static void fixDTD(xmlDoc* doc) {
-  return;
-    if(!doc->extSubset) {
-        xmlNodePtr dtd = (xmlNodePtr) xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.0 Strict//EN",
-                "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd");
-#ifdef FIREFOX_DOES_NOT_SUCK
-        bool eaten = false;
-        if(doc->children) {
-            if(doc->children->type != XML_DTD_NODE) {
-                xmlAddPrevSibling(doc->children,(xmlNodePtr)dtd);
-                // the above eats the dtd
-                eaten = true;
-            }
-        } else {
-            xmlAddChild((xmlNodePtr)doc,(xmlNodePtr)dtd);
-            // the above will eat the dtd once you add another child
-            eaten = true;
-        }
-        if(eaten) {
-            xmlNewDtd(doc, "html", "-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
-        }
-#endif /* FIREFOX_DOES_NOT_SUCK */
-    }
-}
-
 void libxml2SUCKS(xmlNode* cur) {
     /* libxml2 is stupid about namespaces.
      * When you copy a node from one document to another, it does not adjust the namespaces to accomodate. That results in a document along the lines of
@@ -686,10 +659,14 @@ static void doMetas(xmlNode* root, xmlNode* head) {
     foreachNode(root,"meta",moveToNewDerp,head);
 }
 
-const char defaultTemplate[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-    "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-    "<head><title/><header/></head>\n"
-  "<body><h1><intitle/></h1><top/><content/><footer/></body></html>";
+const char defaultTemplate[] =
+  "<!DOCTYPE html>\n"
+  "<html>\n"
+  "<head><meta charset=\"utf-8\"/>\n"
+  "<title/><header/></head>\n"
+  "<body><h1><intitle/></h1>\n"
+  "<top/><content/><footer/>\n"
+  "</body></html>";
 
 int main(void) {
 
@@ -715,7 +692,6 @@ int main(void) {
 
     xmlDoc* doc = readFunky(0,"<main htmlish markup>");
     assert(doc);
-    fixDTD(output);
     xmlNode* oroot = xmlDocGetRootElement(output);
     struct ishctx ctx = {
         .endedNewline = false,
