@@ -111,7 +111,7 @@
    maybe if they're given a special attribute to indicate it */
 
 struct ishctx {
-    xmlNode* e;
+    htmlNode* e;
     xmlNs* ns;
     bool inParagraph;
     bool endedNewline;
@@ -119,23 +119,23 @@ struct ishctx {
 
 bool debugging = false;
 
-static xmlNode* copyToNew(xmlNode* old, xmlNode* parent) {
-  xmlNode* new = xmlDocCopyNode(old,parent->doc,1);
+static htmlNode* copyToNew(htmlNode* old, htmlNode* parent) {
+  htmlNode* new = htmlDocCopyNode(old,parent->doc,1);
   xmlAddChild(parent,new);
   return new;
 }
 
-static xmlNode* moveToNew(xmlNode* old, xmlNode* parent) {
-  xmlNode* new = copyToNew(old,parent);
+static htmlNode* moveToNew(htmlNode* old, htmlNode* parent) {
+  htmlNode* new = copyToNew(old,parent);
   xmlUnlinkNode(old);
   return new;
 }
-static void moveToNewDerp(xmlNode* old, void* ctx) {
-  xmlNode* head = (xmlNode*) ctx;
+static void moveToNewDerp(htmlNode* old, void* ctx) {
+  htmlNode* head = (htmlNode*) ctx;
   moveToNew(old,head);
 }
 
-static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
+static void newthingy(struct ishctx* ctx, htmlNode* thingy) {
     if(ctx->inParagraph) {
         xmlAddChild(ctx->e,thingy);
     } else {
@@ -151,10 +151,10 @@ static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
             snprintf(buf,sizeof(buf),"start %s",where);
             newthingy(ctx,xmlNewComment(buf));
         }
-        xmlNodeAddContentLen(ctx->e,"\n",1);
+        htmlNodeAddContentLen(ctx->e,"\n",1);
         newthingy(ctx,xmlNewNode(ctx->ns,"p"));
         //xmlSetProp(ctx->e,"where",where);
-        xmlNodeAddContentLen(ctx->e,"\n",1);
+        htmlNodeAddContentLen(ctx->e,"\n",1);
         ctx->inParagraph = true;
     }
 }
@@ -171,33 +171,33 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     }
 }
 
-xmlNode* fuckXPath(xmlNode* parent, const char* name) {
+htmlNode* fuckXPath(htmlNode* parent, const char* name) {
     if(strcmp(parent->name,name)==0)
         return parent;
-    xmlNode* cur = parent->children;
+    htmlNode* cur = parent->children;
     for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPath(cur,name);
+        htmlNode* ret = fuckXPath(cur,name);
         if(ret)
             return ret;
     }
     return NULL;
 }
 
-xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
+htmlNode* fuckXPathDivId(htmlNode* parent, const char* id) {
     if(strcmp(parent->name,"div")==0) {
         const char* test = xmlGetProp(parent,"id");
         if(test && strcmp(test,id) == 0)
             return parent;
     }
-    xmlNode* cur = parent->children;
+    htmlNode* cur = parent->children;
     for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPathDivId(cur,id);
+        htmlNode* ret = fuckXPathDivId(cur,id);
         if(ret)
             return ret;
     }
     return NULL;
 }
-void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
+void foreachNode(htmlNode* parent, const char* name, void (*handle)(htmlNode*,void*), void* ctx) {
     if(!parent->name) {
         assert(!parent->children);
         // we don't process text
@@ -205,20 +205,20 @@ void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void
     }
     if(strcmp(parent->name,name)==0)
         handle(parent,ctx);
-    xmlNode* cur = parent->children;
+    htmlNode* cur = parent->children;
     while(cur) {
-        xmlNode* next = cur->next;
+        htmlNode* next = cur->next;
         foreachNode(cur,name,handle,ctx);
         cur = next;
     }
 }
 
-xmlNode* findOrCreate(xmlNode* parent, const char* path) {
+htmlNode* findOrCreate(htmlNode* parent, const char* path) {
     if(*path == 0)
         return parent;
 
     const char* next = strchrnul(path,'/');
-    xmlNode* cur = parent->children;
+    htmlNode* cur = parent->children;
     for(;cur;cur = cur->next) {
         if(0==memcmp(cur->name,path,next-path)) {
             return findOrCreate(cur,next);
@@ -228,15 +228,15 @@ xmlNode* findOrCreate(xmlNode* parent, const char* path) {
     static char name[0x100];
     memcpy(name,path,next-path);
     name[next-path] = 0;
-    xmlNode* new = xmlNewNode(parent->ns,name);
+    htmlNode* new = xmlNewNode(parent->ns,name);
     xmlAddChild(parent,new);
     return findOrCreate(new,next);
 }
 
-static xmlNode* getContent(xmlNode* oroot, bool createBody) {
-  xmlNode* content = fuckXPath(oroot,"content");
+static htmlNode* getContent(htmlNode* oroot, bool createBody) {
+  htmlNode* content = fuckXPath(oroot,"content");
   if(content) {
-    xmlNode* text = xmlNewText("");
+    htmlNode* text = xmlNewText("");
     xmlReplaceNode(content,text);
     xmlFreeNode(content);
     content = text;
@@ -244,7 +244,7 @@ static xmlNode* getContent(xmlNode* oroot, bool createBody) {
     content = fuckXPathDivId(oroot,"content");
     if(content) {
       if(content->children == NULL) {
-        xmlNode* text = xmlNewTextLen("",0);
+        htmlNode* text = xmlNewTextLen("",0);
         assert(text);
         xmlAddChild(content,text);
       }
@@ -253,7 +253,7 @@ static xmlNode* getContent(xmlNode* oroot, bool createBody) {
     } else if(false == createBody) {
       content = oroot;
     } else {
-      xmlNode* body = findOrCreate(oroot,"body");
+      htmlNode* body = findOrCreate(oroot,"body");
       assert(body != NULL);
       content = body->children;
     }
@@ -261,15 +261,15 @@ static xmlNode* getContent(xmlNode* oroot, bool createBody) {
   return content;
 }
 
-static void processRoot(struct ishctx* ctx, xmlNode* root);
+static void processRoot(struct ishctx* ctx, htmlNode* root);
 
-static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
+static bool maybeHish(htmlNode* e, struct ishctx* ctx) {
   if(xmlHasProp(e,"hish")) {
     fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
     xmlUnlinkNode(e);
 
     xmlUnsetProp(e,"hish");
-    xmlNode* dangling = xmlNewNode(ctx->ns,"derp");
+    htmlNode* dangling = xmlNewNode(ctx->ns,"derp");
     /* process the contents of this node like the root one */
     struct ishctx subctx = {
       .endedNewline = false,
@@ -278,7 +278,7 @@ static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
       .inParagraph = false,
     };
     processRoot(&subctx,e);
-    xmlNode* ne = moveToNew(e,ctx->e);
+    htmlNode* ne = moveToNew(e,ctx->e);
     ne->children = dangling->next;
     xmlUnlinkNode(dangling);
     return true;
@@ -307,7 +307,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                     if(!isspace(*c)) {
                         maybeStartParagraph(ctx,"beginning");
                         // no newlines between start and nul. Just leave it in the current paragraph!
-                        xmlNodeAddContentLen(ctx->e,start,end-start);
+                        htmlNodeAddContentLen(ctx->e,start,end-start);
                         break;
                     }
                 }
@@ -326,7 +326,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                   }
                     maybeStartParagraph(ctx,"middle");
                     first = false;
-                    xmlNodeAddContentLen(ctx->e,start,end-start);
+                    htmlNodeAddContentLen(ctx->e,start,end-start);
                     maybeEndParagraph(ctx,"middle");
                     break;
                 }
@@ -348,10 +348,10 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
 
 #define LITCMP(a,l) strncmp(a,l,sizeof(l))
 
-static void processRoot(struct ishctx* ctx, xmlNode* root) {
-    xmlNode* e = root->children;
+static void processRoot(struct ishctx* ctx, htmlNode* root) {
+    htmlNode* e = root->children;
     while(e) {
-        xmlNode* next = e->next;
+        htmlNode* next = e->next;
         switch(e->type) {
         case XML_ENTITY_NODE:
         case XML_ENTITY_REF_NODE:
@@ -401,13 +401,13 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
           }
 
         default:
-            newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
+            newthingy(ctx,htmlDocCopyNode(e,ctx->e->doc,1));
         };
         e = next;
     }
 }
 
-void libxml2SUCKS(xmlNode* cur) {
+void libxml2SUCKS(htmlNode* cur) {
     /* libxml2 is stupid about namespaces.
      * When you copy a node from one document to another, it does not adjust the namespaces to accomodate. That results in a document along the lines of
      * <html xmlns="somecrappylongurlthatispointless">...<i xmlns="theothernamespaceintheolddocument">italic</i>...</html>
@@ -455,7 +455,7 @@ void libxml2SUCKS(xmlNode* cur) {
 #define FOOTER "</body></html>"
 
 #define BUFSIZE 0x1000
-xmlDoc* readFunky(int fd, const char* content) {
+htmlDoc* readFunky(int fd, const char* content) {
     htmlParserCtxtPtr ctx;
     char buf[BUFSIZE];
     ctx = htmlCreatePushParserCtxt(NULL, NULL,
@@ -479,7 +479,7 @@ xmlDoc* readFunky(int fd, const char* content) {
     }
 
     htmlParseChunk(ctx,FOOTER,sizeof(FOOTER)-1, 1);
-    xmlDoc* doc = ctx->myDoc;
+    htmlDoc* doc = ctx->myDoc;
     if(!ctx->wellFormed) {
         fprintf(stderr,"Warning: not well formed.\n");
     }
@@ -487,27 +487,27 @@ xmlDoc* readFunky(int fd, const char* content) {
     libxml2SUCKS(doc->children);
     return doc;
 }
-static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
+static void parseEnvFile(const char* path, htmlNodeSetPtr nodes) {
     if(!path) return;
 
     int inp = open(path,O_RDONLY);
-    xmlDoc* doc = readFunky(inp,path);
+    htmlDoc* doc = readFunky(inp,path);
     close(inp);
     if(!doc) {
         fprintf(stderr,"Couldn't parse %s",path);
         exit(5);
     }
-    xmlNode* root = xmlDocGetRootElement(doc);
-    xmlNode* cur = root;  // body
+    htmlNode* root = htmlDocGetRootElement(doc);
+    htmlNode* cur = root;  // body
     nodes->nodeNr = 0;
     for(;cur;cur = cur->next) {
         ++nodes->nodeNr;
     }
-    nodes->nodeTab = malloc(sizeof(xmlNode*)*nodes->nodeNr);
+    nodes->nodeTab = malloc(sizeof(htmlNode*)*nodes->nodeNr);
     cur = root;
     int i = 0;
     for(;cur;++i) {
-        xmlNode* next = cur->next;
+        htmlNode* next = cur->next;
         nodes->nodeTab[i] = cur;
         xmlUnlinkNode(cur);
         cur = next;
@@ -519,10 +519,10 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 struct dbfderp {
     const char* name;
     const char* path;
-    xmlNodeSet replacement;
+    htmlNodeSet replacement;
 };
 
-static void doByFile2(xmlNode* target, void* ctx) {
+static void doByFile2(htmlNode* target, void* ctx) {
     struct dbfderp* derp = (struct dbfderp*) ctx;
     if(!derp->path) {
         if(target) {
@@ -533,10 +533,10 @@ static void doByFile2(xmlNode* target, void* ctx) {
         if(!target) {
             fprintf(stderr,"No target found for %s\n",derp->name);
         }
-        xmlNode* cur = target;
+        htmlNode* cur = target;
         int i = 0;
         for(;i<derp->replacement.nodeNr;++i) {
-            xmlNode* new = xmlDocCopyNode(derp->replacement.nodeTab[i],cur->doc,1);
+            htmlNode* new = htmlDocCopyNode(derp->replacement.nodeTab[i],cur->doc,1);
             xmlAddNextSibling(cur,new);
             cur = new;
         }
@@ -549,22 +549,22 @@ static void doByFile2(xmlNode* target, void* ctx) {
  * a specified placeholder element such as <header/>
  */
 
-static void doByFile(xmlDoc* output, const char* name) {
+static void doByFile(htmlDoc* output, const char* name) {
     const char* path = getenv(name);
     struct dbfderp derp = { name, path };
     parseEnvFile(derp.path,&derp.replacement);
-    foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
+    foreachNode(htmlDocGetRootElement(output),name,doByFile2,&derp);
 }
 
 struct dostylederp {
-  xmlNode* outhead;
+  htmlNode* outhead;
   bool hasContents;
   bool needFree;
   bool found;
 };
 
-void createStyle(xmlNode* head, const char* url) {
-  xmlNode* style = xmlNewNode(head->ns,"link");
+void createStyle(htmlNode* head, const char* url) {
+  htmlNode* style = xmlNewNode(head->ns,"link");
   xmlSetProp(style,"href",url);
   xmlSetProp(style,"rel","stylesheet");
   xmlSetProp(style,"type","text/css");
@@ -578,8 +578,8 @@ void createStyle(xmlNode* head, const char* url) {
  * TODO: strip whitespace on either side of the URL
  */
 
-static void removeStylesheets(xmlNode* target, void* ctx) {
-  xmlNode* head = (xmlNode*) ctx;
+static void removeStylesheets(htmlNode* target, void* ctx) {
+  htmlNode* head = (htmlNode*) ctx;
   createStyle(head,target->children[0].content);
   xmlUnlinkNode(target);
 }
@@ -589,7 +589,7 @@ static void removeStylesheets(xmlNode* target, void* ctx) {
  * TODO: coalesce <style/> tags into an external stylesheet
  */
 
-void doStyle(xmlNode* root, xmlNode* head) {
+void doStyle(htmlNode* root, htmlNode* head) {
   const char* envstyle = getenv("style");
   if(envstyle) {
     createStyle(head,envstyle);
@@ -599,11 +599,11 @@ void doStyle(xmlNode* root, xmlNode* head) {
   foreachNode(root,"link",moveToNewDerp,head);
 }
 
-static void doIntitle2(xmlNode* target, void* ctx) {
+static void doIntitle2(htmlNode* target, void* ctx) {
     xmlReplaceNode(target,xmlNewText(ctx));
 }
 
-void doIntitle(xmlNode* oroot, const char* title) {
+void doIntitle(htmlNode* oroot, const char* title) {
     foreachNode(oroot,"intitle",doIntitle2,(void*)title);
 }
 
@@ -611,7 +611,7 @@ struct titleseeker {
     char* title;
 };
 
-static void eliminateTitles(xmlNode* target, void* ctx) {
+static void eliminateTitles(htmlNode* target, void* ctx) {
     struct titleseeker* ts = (struct titleseeker*) ctx;
     if(ts->title == NULL && target->children) {
         const char* title = target->children[0].content;
@@ -621,7 +621,7 @@ static void eliminateTitles(xmlNode* target, void* ctx) {
     //xmlFreeNode(target);
 }
 
-void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
+void doTitle(htmlNode* oroot, htmlNode* root, htmlNode* head) {
     const char* contents = getenv("title");
 
     struct titleseeker ts;
@@ -633,7 +633,7 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
 
     assert(contents || ts.title);
 
-    xmlNode* title = findOrCreate(head,"title");
+    htmlNode* title = findOrCreate(head,"title");
     xmlAddChild(title,xmlNewText(ts.title ? ts.title : contents));
 
     // this is sneaky, modifies the <intitle/> element discovered with doTitle
@@ -643,11 +643,11 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
 
 
 struct metaseeker {
-    xmlNode** meta;
+    htmlNode** meta;
     int nmeta;
 };
 
-static void extractMetas(xmlNode* target, void* ctx) {
+static void extractMetas(htmlNode* target, void* ctx) {
     struct metaseeker* ms = (struct metaseeker*) ctx;
     xmlUnlinkNode(target);
     ms->meta = realloc(ms->meta,ms->nmeta+1);
@@ -655,7 +655,7 @@ static void extractMetas(xmlNode* target, void* ctx) {
     ++ms->nmeta;
 }
 
-static void doMetas(xmlNode* root, xmlNode* head) {
+static void doMetas(htmlNode* root, htmlNode* head) {
     foreachNode(root,"meta",moveToNewDerp,head);
 }
 
@@ -679,25 +679,25 @@ int main(void) {
     setupInput();
 
 
-    xmlDoc* output;
+    htmlDoc* output;
     if(getenv("template")) {
-        output = xmlParseFile(getenv("template"));
+        output = htmlParseFile(getenv("template"),"utf-8");
         if(!output) {
             fprintf(stderr,"Error: template failed... not sure if well formed or not.\n");
             exit(2);
         }
     } else {
-        output = xmlParseMemory(defaultTemplate,sizeof(defaultTemplate));
+        output = htmlReadMemory(defaultTemplate,sizeof(defaultTemplate));
     }
 
-    xmlDoc* doc = readFunky(0,"<main htmlish markup>");
+    htmlDoc* doc = readFunky(0,"<main htmlish markup>");
     assert(doc);
-    xmlNode* oroot = xmlDocGetRootElement(output);
+    htmlNode* oroot = htmlDocGetRootElement(output);
     struct ishctx ctx = {
         .endedNewline = false,
         .e = getContent(oroot,false)
     };
-    xmlNode* root = xmlDocGetRootElement(doc);
+    htmlNode* root = htmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
 	root = root->children;
@@ -709,7 +709,7 @@ int main(void) {
     doByFile(output,"header");
     doByFile(output,"top");
     doByFile(output,"footer");
-    xmlNode *ohead = fuckXPath(oroot,"head");
+    htmlNode *ohead = fuckXPath(oroot,"head");
     if(ohead == NULL) {
         ohead = xmlNewNode(ctx.ns,"head");
         if(root->children) {

@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-inline void printCollapseWhitespace(xmlChar* s) {
+static void printCollapseWhitespace(xmlChar* s) {
     for(;;) {
         switch(*s) {
             case 0:
