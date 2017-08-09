@@ -109,10 +109,10 @@ static void doByFile(xmlDoc* output, const char* name) {
 	parseEnvFile(derp.path,&derp.replacement);
 	foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
 	int i = 0;
-	for(;i<derp->replacement.nodeNr;++i) {
-		xmlFreeNode(derp->replacement.nodeTab[i]);
+	for(;i<derp.replacement.nodeNr;++i) {
+		xmlFreeNode(derp.replacement.nodeTab[i]);
 	}
-	free(derp->replacement.nodeTab);
+	free(derp.replacement.nodeTab);
 }
 
 

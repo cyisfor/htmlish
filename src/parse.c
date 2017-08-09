@@ -171,22 +171,6 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     }
 }
 
-void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
-    if(!parent->name) {
-        assert(!parent->children);
-        // we don't process text
-        return;
-    }
-    if(strcmp(parent->name,name)==0)
-        handle(parent,ctx);
-    xmlNode* cur = parent->children;
-    while(cur) {
-        xmlNode* next = cur->next;
-        foreachNode(cur,name,handle,ctx);
-        cur = next;
-    }
-}
-
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
 static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
