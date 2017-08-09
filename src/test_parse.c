@@ -5,6 +5,7 @@
 #include <libxml/tree.h> // xmlCopyDoc
 
 #include <stdio.h>
+#include <assert.h>
 
 #include <fcntl.h> // open, O_RDONLY
 
@@ -22,12 +23,12 @@ int main(int argc, char *argv[])
 	int i;
 	for(i=0;;++i) {
 		char buf[0x100];
-		snprintf(buf,"test/parse%d.hish",i);
+		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
 		if(fd < 0) break;
 		printf("test %s\n",buf);
 		xmlDoc* doc = xmlCopyDoc(template, 1);
-		xmlDoc* content = doc->children->children; // body
+		xmlNode* content = doc->children->children; // body
 		assert(content);
 		htmlish(content,fd);
 		htmlDocDump(stdout,doc);
