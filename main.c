@@ -1,7 +1,7 @@
 #include "input.h"
 #include "parse.h"
 
-#include <libxml/HTMLParser.h>
+#include <libxml/HTMLparser.h>
 
 static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 	if(!path) return;
