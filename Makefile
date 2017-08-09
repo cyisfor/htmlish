@@ -1,17 +1,20 @@
-all: parse unparse
+all: test_copynode parse unparse
 
 CFLAGS+=-g -Ilibxml2/include/
-
+LINK=gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
 O=$(patsubst %,o/%.o,$N)
 S=$(patsubst %,src/%.c,$N)
 
+N=test_copynode
+test_copynode: $O libxml2/.libs/libxml2.a
+
 N=unparse input
 unparse: $O libxml2/.libs/libxml2.a
-	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(LINK)
 
 N=main parse input libxmlfixes
 parse: $O libxml2/.libs/libxml2.a
-	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(LINK)
 
 libxml2/.libs/libxml2.a: libxml2/configure
 	cd libxml2 && ./configure && make -j4
