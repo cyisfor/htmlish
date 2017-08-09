@@ -2,6 +2,7 @@
 
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
+#include <fcntl.h> // open, O_RDONLY
 
 int main(int argc, char *argv[])
 {

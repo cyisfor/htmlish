@@ -1,4 +1,4 @@
-all: test_copynode parse unparse
+all: test_parse test_copynode parse unparse
 
 CFLAGS+=-g -Ilibxml2/include/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
