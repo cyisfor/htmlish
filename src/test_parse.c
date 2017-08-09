@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 		if(fd < 0) break;
 		printf("test %s\n",buf);
 		xmlDoc* doc = xmlCopyDoc(template, 1);
-		xmlNode* content = doc->next->children->children; // body
+		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
 		htmlish(content,fd);
 		htmlDocDump(stdout,doc);
