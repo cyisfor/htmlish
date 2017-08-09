@@ -2,13 +2,19 @@
 
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
+#include <libxml/tree.h> // xmlCopyDoc
+
+
 #include <fcntl.h> // open, O_RDONLY
 
 int main(int argc, char *argv[])
 {
-	xmlDoc* template = htmlParseMemory(LITLEN(
-																 "<!DOCTYPE html>\n"
-																 "<html><body/></html>"));
+	xmlDoc* template = htmlReadMemory(LITLEN(
+																			"<!DOCTYPE html>\n"
+																			"<html><body/></html>"),
+		"about:blank",
+		"UTF-8",
+		0);
 
 	int i;
 	for(i=0;;++i) {
