@@ -392,7 +392,7 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
     // this allows setting the title inline anywhere via a <title> tag.
     foreachNode(root,"title",eliminateTitles,(void*)&ts);
 
-    assert(contents || ts.title);
+    if(!(contents || ts.title)) return;
 
     xmlNode* title = findOrCreate(head,"title");
     xmlAddChild(title,xmlNewText(ts.title ? ts.title : contents));
