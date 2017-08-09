@@ -10,9 +10,9 @@ int main(int argc, char *argv[])
 																 "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body></body></html>"));
 	xmlDocDump(stdout,doc);
 	xmlDoc* other = xmlParseMemory(LITLEN(
-																 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<html xmlns=\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"><body></body></html>"));
+																 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<html xmlns=\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"><head></head></html>"));
 	xmlDocDump(stdout,other);
-	xmlNode* copy = xmlDocCopyNode(doc->children, other, 1);
+	xmlNode* copy = xmlDocCopyNode(doc->children->children, other, 1);
 	xmlAddChild(other->children, copy);
 	puts("--------");
 	xmlDocDump(stdout,other);
