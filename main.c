@@ -3,6 +3,38 @@
 
 #include <libxml/HTMLparser.h>
 
+
+static xmlNode* getContent(xmlNode* oroot, bool createBody) {
+  xmlNode* content = fuckXPath(oroot,"content");
+  if(content) {
+    xmlNode* new = xmlNewNode(content->ns, "div");
+
+		xmlSetProp(new,"id","content");
+    xmlReplaceNode(content,new);
+    xmlFreeNode(content);
+		return new;
+  } 
+	content = fuckXPathDivId(oroot,"content");
+	if(content) {
+		if(content->children == NULL) {
+			xmlNode* text = xmlNewTextLen("",0);
+			assert(text);
+			xmlAddChild(content,text);
+		}
+		assert(content->children);
+		return content->children;
+	}
+
+	if(false == createBody) {
+		return oroot; // just use root I guess?
+	}
+	
+	xmlNode* body = findOrCreate(oroot,"body");
+	assert(body != NULL);
+  return body->children;
+}
+
+
 static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 	if(!path) return;
 
@@ -70,7 +102,7 @@ static void doByFile(xmlDoc* output, const char* name) {
 	struct dbfderp derp = { name, path };
 	parseEnvFile(derp.path,&derp.replacement);
 	foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
-}
+ls}
 
 
 int main(void) {
@@ -96,8 +128,8 @@ int main(void) {
 																HTML_PARSE_NOBLANKS |
 																HTML_PARSE_COMPACT);
     }
-/* This sets up the template, filling in placeholder elements
-	 with the stuff that the environment carries */
+		/* This sets up the template, filling in placeholder elements
+			 with the stuff that the environment carries */
 
 		doByFile(output,"header");
 		doByFile(output,"top");
