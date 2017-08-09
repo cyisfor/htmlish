@@ -21,14 +21,14 @@ int main(int argc, char *argv[])
 		0);
 
 	int i;
-	for(i=0;;++i) {
+	for(i=1;;++i) {
 		char buf[0x100];
 		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
 		if(fd < 0) break;
 		printf("test %s\n",buf);
 		xmlDoc* doc = xmlCopyDoc(template, 1);
-		xmlNode* content = doc->children->children; // body
+		xmlNode* content = doc->next->children->children; // body
 		assert(content);
 		htmlish(content,fd);
 		htmlDocDump(stdout,doc);
