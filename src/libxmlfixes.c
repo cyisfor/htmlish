@@ -1,5 +1,11 @@
+#define _GNU_SOURCE
 #include "libxmlfixes.h"
 #include <libxml/HTMLparser.h>
+#include <assert.h>
+#include <string.h> // strlen
+#include <sys/stat.h>
+#include <sys/mman.h> // mmap
+#include <unistd.h> // close, read
 
 void libxml2SUCKS(xmlNode* cur) {
     /* libxml2 is stupid about namespaces.
