@@ -449,44 +449,6 @@ void libxml2SUCKS(xmlNode* cur) {
     libxml2SUCKS(cur->next);
 }
 
-#define HEADER "<!DOCTYPE html>\n" \
-    "<html><body>"
-
-#define FOOTER "</body></html>"
-
-#define BUFSIZE 0x1000
-xmlDoc* readFunky(int fd, const char* content) {
-    htmlParserCtxtPtr ctx;
-    char buf[BUFSIZE];
-    ctx = htmlCreatePushParserCtxt(NULL, NULL,
-                                   "",0,"htmlish.xml",
-								   XML_CHAR_ENCODING_UTF8);
-    assert(ctx);
-    htmlCtxtUseOptions(ctx,
-					   HTML_PARSE_NONET |
-					   HTML_PARSE_COMPACT |
-					   HTML_PARSE_RECOVER
-					   );
-    htmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
-    if(fd<0) {
-        htmlParseChunk(ctx,content,strlen(content),0);
-    } else {
-        for(;;) {
-            ssize_t amt = read(fd,buf,BUFSIZE);
-            if(amt<=0) break;
-            htmlParseChunk(ctx, buf, amt, 0);
-        }
-    }
-
-    htmlParseChunk(ctx,FOOTER,sizeof(FOOTER)-1, 1);
-    xmlDoc* doc = ctx->myDoc;
-    if(!ctx->wellFormed) {
-        fprintf(stderr,"Warning: not well formed.\n");
-    }
-    xmlFreeParserCtxt(ctx);
-    libxml2SUCKS(doc->children);
-    return doc;
-}
 
 struct dostylederp {
   xmlNode* outhead;
@@ -599,6 +561,57 @@ const char defaultTemplate[] =
   "<body><h1><intitle/></h1>\n"
   "<top/><content/><footer/>\n"
   "</body></html>";
+
+/* just a libxml2 fix */
+
+#define HEADER "<!DOCTYPE html>\n"							\
+    "<html><body>"
+
+#define FOOTER "</body></html>"
+
+#define BUFSIZE 0x1000
+static xmlDoc* readFunky(int fd, const char* content) {
+    htmlParserCtxtPtr ctx;
+    ctx = htmlCreatePushParserCtxt(NULL, NULL,
+                                   "",0,"htmlish.xml",
+								   XML_CHAR_ENCODING_UTF8);
+    assert(ctx);
+    htmlCtxtUseOptions(ctx,
+					   HTML_PARSE_NONET |
+					   HTML_PARSE_COMPACT |
+					   HTML_PARSE_RECOVER
+					   );
+    htmlParseChunk(ctx, HEADER, sizeof(HEADER)-1, 0);
+    if(fd<0) {
+        htmlParseChunk(ctx,content,strlen(content),0);
+    } else {
+			struct stat info;
+			if(0 == fstat(fd,&info) && info.st_size > BUFSIZE) {
+				char* buf = mmap(NULL,info.st_size,PROT_READ,MAP_PRIVATE,0,0);
+				if(fd>0) close(fd);
+				assert(buf != MAP_FAILED);
+				htmlParseChunk(ctx,buf,info.st_size,0);
+				munmap(buf,info.st_size);
+			} else {
+				char buf[BUFSIZE];
+        for(;;) {
+            ssize_t amt = read(fd,buf,BUFSIZE);
+            if(amt<=0) break;
+            htmlParseChunk(ctx, buf, amt, 0);
+        }
+			}
+    }
+
+    htmlParseChunk(ctx,FOOTER,sizeof(FOOTER)-1, 1);
+    xmlDoc* doc = ctx->myDoc;
+    if(!ctx->wellFormed) {
+        fprintf(stderr,"Warning: not well formed.\n");
+    }
+    xmlFreeParserCtxt(ctx);
+    libxml2SUCKS(doc->children);
+    return doc;
+}
+
 
 void htmlish(xmlNode* content, int fd) {
 	struct ishctx ctx = {
