@@ -16,7 +16,8 @@ int main(int argc, char *argv[])
 																	 "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head></head></html>"));
 	xmlDocDump(stdout,other);
 	assert(doc->children);
-	xmlNode* copy = xmlDocCopyNode(doc->children, other, 1);
+	printf("uuuum %d\n",doc->children->next->type);
+	xmlNode* copy = xmlDocCopyNode(doc->children->next, other, 1);
 	xmlAddChild(other->children, copy);
 	printf("um %s\n",copy->name);
 	puts("--------");
