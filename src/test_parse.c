@@ -36,7 +36,10 @@ int main(int argc, char *argv[])
 		snprintf(buf,0x100,"test/parse%d.html",i);
 		fd = open(buf,O_RDONLY);
 		if(fd < 0) {
-			printf("setup this to go in test/parse%d.html",i);
+			fd = open(buf,O_WRONLY|O_CREAT,0644);
+			assert(fd >= 0);
+			htmlDocDump(fdopen(fd,"w"),doc);
+			printf("check test/parse%d.html\n",i);
 			exit(23);
 		}
 	}
