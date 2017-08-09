@@ -5,10 +5,10 @@
 int main(int argc, char *argv[])
 {
 	xmlDoc* doc = xmlParseMemory(LITLEN(
-																 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<xml><thing></thing></xml>"));
+																 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<html xmlns=\"http://www.w3.org/1999/xhtml\"><body></body></html>"));
 	xmlDocDump(stdout,doc);
 	xmlDoc* other = xmlParseMemory(LITLEN(
-																 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<xml><thing2></thing2></xml>"));
+																 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<xml xmlns=\"derp\"><thing2></thing2></xml>"));
 	xmlDocDump(stdout,other);
 	xmlNode* copy = xmlDocCopyNode(doc->children, other, 1);
 	xmlAddChild(other->children, copy);
