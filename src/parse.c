@@ -171,32 +171,6 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
     }
 }
 
-xmlNode* fuckXPath(xmlNode* parent, const char* name) {
-    if(strcmp(parent->name,name)==0)
-        return parent;
-    xmlNode* cur = parent->children;
-    for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPath(cur,name);
-        if(ret)
-            return ret;
-    }
-    return NULL;
-}
-
-xmlNode* fuckXPathDivId(xmlNode* parent, const char* id) {
-    if(strcmp(parent->name,"div")==0) {
-        const char* test = xmlGetProp(parent,"id");
-        if(test && strcmp(test,id) == 0)
-            return parent;
-    }
-    xmlNode* cur = parent->children;
-    for(;cur;cur=cur->next) {
-        xmlNode* ret = fuckXPathDivId(cur,id);
-        if(ret)
-            return ret;
-    }
-    return NULL;
-}
 void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void*), void* ctx) {
     if(!parent->name) {
         assert(!parent->children);
