@@ -487,74 +487,6 @@ xmlDoc* readFunky(int fd, const char* content) {
     libxml2SUCKS(doc->children);
     return doc;
 }
-static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
-    if(!path) return;
-
-    int inp = open(path,O_RDONLY);
-    xmlDoc* doc = readFunky(inp,path);
-    close(inp);
-    if(!doc) {
-        fprintf(stderr,"Couldn't parse %s",path);
-        exit(5);
-    }
-    xmlNode* root = xmlDocGetRootElement(doc);
-    xmlNode* cur = root;  // body
-    nodes->nodeNr = 0;
-    for(;cur;cur = cur->next) {
-        ++nodes->nodeNr;
-    }
-    nodes->nodeTab = malloc(sizeof(xmlNode*)*nodes->nodeNr);
-    cur = root;
-    int i = 0;
-    for(;cur;++i) {
-        xmlNode* next = cur->next;
-        nodes->nodeTab[i] = cur;
-        xmlUnlinkNode(cur);
-        cur = next;
-    }
-    xmlFreeDoc(doc);
-}
-
-
-struct dbfderp {
-    const char* name;
-    const char* path;
-    xmlNodeSet replacement;
-};
-
-static void doByFile2(xmlNode* target, void* ctx) {
-    struct dbfderp* derp = (struct dbfderp*) ctx;
-    if(!derp->path) {
-        if(target) {
-            xmlUnlinkNode(target);
-            xmlFreeNode(target);
-        }
-    } else {
-        if(!target) {
-            fprintf(stderr,"No target found for %s\n",derp->name);
-        }
-        xmlNode* cur = target;
-        int i = 0;
-        for(;i<derp->replacement.nodeNr;++i) {
-            xmlNode* new = xmlDocCopyNode(derp->replacement.nodeTab[i],cur->doc,1);
-            xmlAddNextSibling(cur,new);
-            cur = new;
-        }
-        xmlUnlinkNode(target);
-        xmlFreeNode(target);
-    }
-}
-
-/* Add the XML fragment contained in a file, in the place of
- * a specified placeholder element such as <header/>
- */
-
-static void doByFile(xmlDoc* output, const char* name) {
-    const char* path = getenv(name);
-    struct dbfderp derp = { name, path };
-    parseEnvFile(derp.path,&derp.replacement);
-    foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
-}
 
 struct dostylederp {
   xmlNode* outhead;
@@ -668,13 +600,15 @@ const char defaultTemplate[] =
   "<top/><content/><footer/>\n"
   "</body></html>";
 
-void htmlish(xmlNode* dest, int fd) {
+void htmlish(xmlNode* content, int fd) {
 	struct ishctx ctx = {
 		.endedNewline = false,
-		.e = dest
+		.e = content
 	};
 
-	xmlDoc* src = readFunky(fd,"<main htmlish markup>");
+	xmlNode* oroot = xmlDocGetRootElement(content->doc);
+	
+	xmlDoc* doc = readFunky(fd,"<main htmlish markup>");
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
@@ -683,25 +617,22 @@ void htmlish(xmlNode* dest, int fd) {
 	ctx.ns = oroot->ns;
 
 
-    xmlNode *ohead = fuckXPath(oroot,"head");
-    if(ohead == NULL) {
-        ohead = xmlNewNode(ctx.ns,"head");
-        if(root->children) {
-            xmlAddPrevSibling(oroot->children,ohead);
-        } else {
-            xmlAddChild(oroot,ohead);
-        }
-    }
-    /* these remove junk from the source document, putting it in the proper
-       places in the output document.
+	xmlNode *ohead = fuckXPath(oroot,"head");
+	if(ohead == NULL) {
+		ohead = xmlNewNode(ctx.ns,"head");
+		if(root->children) {
+			xmlAddPrevSibling(oroot->children,ohead);
+		} else {
+			xmlAddChild(oroot,ohead);
+		}
+	}
+	/* these remove junk from the source document, putting it in the proper
+		 places in the output document.
     */
-    doTitle(oroot,root,ohead);
-    doMetas(root,ohead);
-    doStyle(root,ohead);
+	doTitle(oroot,root,ohead);
+	doMetas(root,ohead);
+	doStyle(root,ohead);
 
-    /* all stuff removed, process the whitespace! */
-    processRoot(&ctx,root);
-
-    htmlSaveFileFormat("-",output,"utf-8",1);
-    return 0;
+	/* all stuff removed, process the whitespace! */
+	processRoot(&ctx,root);
 }
