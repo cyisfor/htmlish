@@ -668,50 +668,21 @@ const char defaultTemplate[] =
   "<top/><content/><footer/>\n"
   "</body></html>";
 
-int main(void) {
+void htmlish(xmlNode* dest, int fd) {
+	struct ishctx ctx = {
+		.endedNewline = false,
+		.e = dest
+	};
 
-    if(getenv("printtemplate")) {
-        puts(defaultTemplate);
-        return 0;
-    }
-    LIBXML_TEST_VERSION;
-
-    setupInput();
-
-
-    xmlDoc* output;
-    if(getenv("template")) {
-        output = htmlParseFile(getenv("template"),"utf-8");
-        if(!output) {
-            fprintf(stderr,"Error: template failed... not sure if well formed or not.\n");
-            exit(2);
-        }
-    } else {
-        output = htmlReadMemory(defaultTemplate,sizeof(defaultTemplate),"","utf-8",
-																HTML_PARSE_RECOVER |
-																HTML_PARSE_NOBLANKS |
-																HTML_PARSE_COMPACT);
-    }
-
-    xmlDoc* doc = readFunky(0,"<main htmlish markup>");
-    assert(doc);
-    xmlNode* oroot = xmlDocGetRootElement(output);
-    struct ishctx ctx = {
-        .endedNewline = false,
-        .e = getContent(oroot,false)
-    };
-    xmlNode* root = xmlDocGetRootElement(doc);
+	xmlDoc* src = readFunky(fd,"<main htmlish markup>");
+	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
 	root = root->children;
-    assert(root);
-    ctx.ns = oroot->ns;
+	assert(root);
+	ctx.ns = oroot->ns;
 
-    /* This sets up the template, filling in placeholder elements
-       with the stuff that the environment carries */
-    doByFile(output,"header");
-    doByFile(output,"top");
-    doByFile(output,"footer");
+
     xmlNode *ohead = fuckXPath(oroot,"head");
     if(ohead == NULL) {
         ohead = xmlNewNode(ctx.ns,"head");
