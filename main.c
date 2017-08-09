@@ -2,6 +2,7 @@
 #include "parse.h"
 
 #include <libxml/HTMLparser.h>
+#include <stdbool.h>
 
 
 static xmlNode* getContent(xmlNode* oroot, bool createBody) {
