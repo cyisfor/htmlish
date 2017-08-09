@@ -1,6 +1,6 @@
 #include <libxml/tree.h>
 
-void htmlish(xmlDoc* dest, int src);
+void htmlish(xmlNode* dest, int fd);
 
 extern const char defaultTemplate[];
 
