@@ -1,3 +1,6 @@
+#include "libxmlfixes.h"
+#include <libxml/HTMLparser.h>
+
 void libxml2SUCKS(xmlNode* cur) {
     /* libxml2 is stupid about namespaces.
 			 wait, but doesn't it adjust the namespaces?
@@ -172,7 +175,7 @@ void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void
 #define FOOTER "</body></html>"
 
 #define BUFSIZE 0x1000
-static xmlDoc* readFunky(int fd, const char* content) {
+xmlDoc* readFunky(int fd, const char* content) {
     htmlParserCtxtPtr ctx;
     ctx = htmlCreatePushParserCtxt(NULL, NULL,
                                    "",0,"htmlish.xml",
