@@ -1,8 +1,9 @@
 #include "input.h"
 #include "parse.h"
-
+#include "libxmlfixes.h"
 #include <libxml/HTMLparser.h>
 #include <stdbool.h>
+#include <assert.h>
 
 
 static xmlNode* getContent(xmlNode* oroot, bool createBody) {

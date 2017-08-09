@@ -1,5 +1,6 @@
 void libxml2SUCKS(xmlNode* cur) {
     /* libxml2 is stupid about namespaces.
+			 wait, but doesn't it adjust the namespaces?
      * When you copy a node from one document to another, it does not adjust the namespaces to accomodate. That results in a document along the lines of
      * <html xmlns="somecrappylongurlthatispointless">...<i xmlns="theothernamespaceintheolddocument">italic</i>...</html>
      *
