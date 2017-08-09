@@ -2,6 +2,7 @@
 
 #define LIBXML2_NEW_BUFFER
 #define _GNU_SOURCE
+#include "libxmlfixes.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -185,26 +186,6 @@ void foreachNode(xmlNode* parent, const char* name, void (*handle)(xmlNode*,void
         foreachNode(cur,name,handle,ctx);
         cur = next;
     }
-}
-
-xmlNode* findOrCreate(xmlNode* parent, const char* path) {
-    if(*path == 0)
-        return parent;
-
-    const char* next = strchrnul(path,'/');
-    xmlNode* cur = parent->children;
-    for(;cur;cur = cur->next) {
-        if(0==memcmp(cur->name,path,next-path)) {
-            return findOrCreate(cur,next);
-        }
-    }
-
-    static char name[0x100];
-    memcpy(name,path,next-path);
-    name[next-path] = 0;
-    xmlNode* new = xmlNewNode(parent->ns,name);
-    xmlAddChild(parent,new);
-    return findOrCreate(new,next);
 }
 
 static void processRoot(struct ishctx* ctx, xmlNode* root);
