@@ -1,7 +1,9 @@
 all: test_copynode parse unparse
 
 CFLAGS+=-g -Ilibxml2/include/
-LINK=gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
+LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+LDLIBS+=$(shell xml2-config --libs | sed -e's/-xml2//g')
+
 O=$(patsubst %,o/%.o,$N)
 S=$(patsubst %,src/%.c,$N)
 
