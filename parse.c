@@ -233,34 +233,6 @@ xmlNode* findOrCreate(xmlNode* parent, const char* path) {
     return findOrCreate(new,next);
 }
 
-static xmlNode* getContent(xmlNode* oroot, bool createBody) {
-  xmlNode* content = fuckXPath(oroot,"content");
-  if(content) {
-    xmlNode* text = xmlNewText("");
-    xmlReplaceNode(content,text);
-    xmlFreeNode(content);
-    content = text;
-  } else {
-    content = fuckXPathDivId(oroot,"content");
-    if(content) {
-      if(content->children == NULL) {
-        xmlNode* text = xmlNewTextLen("",0);
-        assert(text);
-        xmlAddChild(content,text);
-      }
-      content = content->children;
-      assert(content);
-    } else if(false == createBody) {
-      content = oroot;
-    } else {
-      xmlNode* body = findOrCreate(oroot,"body");
-      assert(body != NULL);
-      content = body->children;
-    }
-  }
-  return content;
-}
-
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
 static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
@@ -518,8 +490,6 @@ const char defaultTemplate[] =
   "<body><h1><intitle/></h1>\n"
   "<top/><content/><footer/>\n"
   "</body></html>";
-
-
 
 void htmlish(xmlNode* content, int fd) {
 	struct ishctx ctx = {
