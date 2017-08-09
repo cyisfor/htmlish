@@ -4,19 +4,23 @@ CFLAGS+=-g -Ilibxml2/include/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/-xml2//g')
 
-O=$(patsubst %,o/%.o,$N)
+O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a
 S=$(patsubst %,src/%.c,$N)
 
 N=test_copynode
-test_copynode: $O libxml2/.libs/libxml2.a
+test_copynode: $O 
+	$(LINK)
+
+N=test_parse parse libxmlfixes
+test_parse: $O
 	$(LINK)
 
 N=unparse input
-unparse: $O libxml2/.libs/libxml2.a
+unparse: $O 
 	$(LINK)
 
 N=main parse input libxmlfixes
-parse: $O libxml2/.libs/libxml2.a
+parse: $O 
 	$(LINK)
 
 libxml2/.libs/libxml2.a: libxml2/configure
