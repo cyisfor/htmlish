@@ -6,7 +6,6 @@
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <libxml/xpath.h>
 #include <libxml/HTMLtree.h>
 #include <libxml/HTMLparser.h>
 #include <assert.h>

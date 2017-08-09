@@ -2,8 +2,11 @@
 #include "parse.h"
 #include "libxmlfixes.h"
 #include <libxml/HTMLparser.h>
+#include <libxml/xpath.h> // NodeSetPtr
 #include <stdbool.h>
 #include <assert.h>
+#include <fcntl.h> // open, O_*
+#include <unistd.h> // close
 
 
 static xmlNode* getContent(xmlNode* oroot, bool createBody) {
