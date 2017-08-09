@@ -68,6 +68,7 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 struct dbfderp {
 	const char* name;
 	const char* path;
+	// save these, so we can copy them multiple times for every <header> tag or whatnot
 	xmlNodeSet replacement;
 };
 
@@ -103,7 +104,12 @@ static void doByFile(xmlDoc* output, const char* name) {
 	struct dbfderp derp = { name, path };
 	parseEnvFile(derp.path,&derp.replacement);
 	foreachNode(xmlDocGetRootElement(output),name,doByFile2,&derp);
-ls}
+	int i = 0;
+	for(;i<derp->replacement.nodeNr;++i) {
+		xmlFreeNode(derp->replacement.nodeTab[i]);
+	}
+	free(derp->replacement.nodeTab);
+}
 
 
 int main(void) {
