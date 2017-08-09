@@ -7,6 +7,7 @@ S=$(patsubst %,src/%.c,$N)
 
 N=test_copynode
 test_copynode: $O libxml2/.libs/libxml2.a
+	$(LINK)
 
 N=unparse input
 unparse: $O libxml2/.libs/libxml2.a
