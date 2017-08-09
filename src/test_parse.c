@@ -4,8 +4,11 @@
 #include <libxml/HTMLparser.h> // input
 #include <libxml/tree.h> // xmlCopyDoc
 
+#include <stdio.h>
 
 #include <fcntl.h> // open, O_RDONLY
+
+#define LITLEN(a) (a),sizeof(a)-1
 
 int main(int argc, char *argv[])
 {
@@ -23,7 +26,7 @@ int main(int argc, char *argv[])
 		int fd = open(buf,O_RDONLY);
 		if(fd < 0) break;
 		printf("test %s\n",buf);
-		xmlDoc* doc = xmlCopyDoc(template);
+		xmlDoc* doc = xmlCopyDoc(template, 1);
 		xmlDoc* content = doc->children->children; // body
 		assert(content);
 		htmlish(content,fd);
