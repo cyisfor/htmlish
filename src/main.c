@@ -8,6 +8,15 @@
 #include <fcntl.h> // open, O_*
 #include <unistd.h> // close
 
+const char defaultTemplate[] =
+  "<!DOCTYPE html>\n"
+  "<html>\n"
+  "<head><meta charset=\"utf-8\"/>\n"
+  "<title/><header/></head>\n"
+  "<body><h1><intitle/></h1>\n"
+  "<top/><content/><footer/>\n"
+  "</body></html>";
+
 
 static xmlNode* getContent(xmlNode* oroot, bool createBody) {
   xmlNode* content = fuckXPath(oroot,"content");

@@ -420,15 +420,6 @@ static void doMetas(xmlNode* root, xmlNode* head) {
     foreachNode(root,"meta",moveToNewDerp,head);
 }
 
-const char defaultTemplate[] =
-  "<!DOCTYPE html>\n"
-  "<html>\n"
-  "<head><meta charset=\"utf-8\"/>\n"
-  "<title/><header/></head>\n"
-  "<body><h1><intitle/></h1>\n"
-  "<top/><content/><footer/>\n"
-  "</body></html>";
-
 void htmlish(xmlNode* content, int fd) {
 	struct ishctx ctx = {
 		.endedNewline = false,
