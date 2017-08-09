@@ -31,9 +31,14 @@ int main(int argc, char *argv[])
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
 		htmlish(content,fd);
+		close(fd);
 		htmlDocDump(stdout,doc);
-		puts("setup this to be the expected result");
-		exit(23);
+		snprintf(buf,0x100,"test/parse%d.html",i);
+		fd = open(buf,O_RDONLY);
+		if(fd < 0) {
+			printf("setup this to go in test/parse%d.html",i);
+			exit(23);
+		}
 	}
 			
 	return 0;
