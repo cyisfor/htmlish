@@ -1,10 +1,14 @@
 all: parse unparse
-export PATH:=/custom/libxml2/bin:$(PATH)
-CFLAGS:=$(CFLAGS) -g `xml2-config --cflags`
-LDFLAGS:= -Wl,-rpath=/custom/libxml2/lib $(LDFLAGS) -g `xml2-config --libs`
 
-unparse: unparse.o input.o
+CFLAGS+=-g -Ilibxml2/include/
+
+unparse: unparse.o input.o libxml2/.libs/libxml2.a
 	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
-parse: main.o parse.o input.o
-	xml2-config --libs
+parse: main.o parse.o input.o libxml2/.libs/libxml2.a
 	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+libxml2/.libs/libxml2.a: libxml2/configure
+	cd libxml2 && ./configure && make -j4
+
+libxml2/configure:
+	cd libxml2 && sh autogen.sh
