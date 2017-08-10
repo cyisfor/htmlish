@@ -25,7 +25,7 @@ parse: $O
 
 N=htmlish input
 libhtmlish.a: $O
-	. ./funnyar.sh
+	sh ./funnyar.sh $@ $O | ar -M
 
 html_when/libhtmlwhen.a: always
 	$(MAKE) -C html_when
