@@ -23,28 +23,6 @@ const char defaultTemplate[] =
   "</body></html>";
 
 
-static xmlNode* getContent(xmlNode* oroot, bool createBody, bool* as_child) {
-  xmlNode* content = fuckXPath(oroot,"content");
-  if(content) {
-		*as_child = false;
-		return content;
-  }
-	*as_child = true;
-	content = fuckXPathDivId(oroot,"content");
-	if(content) {
-		return content;
-	}
-
-	if(false == createBody) {
-		return oroot; // just use root I guess?
-	}
-	
-	xmlNode* body = findOrCreate(oroot,"body");
-	assert(body != NULL);
-  return body;
-}
-
-
 static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 	if(!path) return;
 
