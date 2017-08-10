@@ -11,7 +11,7 @@ N=test_copynode
 test_copynode: $O 
 	$(LINK)
 
-N=test_parse parse libxmlfixes
+N=test_parse htmlish libxmlfixes
 test_parse: $O
 	$(LINK)
 
@@ -19,7 +19,7 @@ N=unparse input
 unparse: $O 
 	$(LINK)
 
-N=main parse input libxmlfixes
+N=main htmlish input libxmlfixes
 parse: $O 
 	$(LINK)
 
