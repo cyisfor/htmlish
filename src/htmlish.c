@@ -1,9 +1,11 @@
+#define LIBXML2_NEW_BUFFER
+#define _GNU_SOURCE
+
 #include "input.h"
+
 
 #include "html_when.h" // coupling.....
 
-#define LIBXML2_NEW_BUFFER
-#define _GNU_SOURCE
 #include "libxmlfixes.h"
 
 #include <libxml/parser.h>
