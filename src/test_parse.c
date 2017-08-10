@@ -1,6 +1,6 @@
 #define _GNU_SOURCE // memcmp
 
-#include "parse.h"
+#include "htmlish.h"
 
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input

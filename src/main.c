@@ -1,5 +1,5 @@
 #include "input.h"
-#include "parse.h"
+#include "htmlish.h"
 #include "libxmlfixes.h"
 #include <libxml/HTMLparser.h>
 #include <libxml/xpath.h> // NodeSetPtr
