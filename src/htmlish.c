@@ -397,8 +397,6 @@ static void eliminateTitles(xmlNode* target, void* ctx) {
 }
 
 void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
-    const char* contents = getenv("title");
-
     struct titleseeker ts;
     ts.title = NULL;
     assert(ts.title == NULL);
@@ -406,13 +404,15 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
     // this allows setting the title inline anywhere via a <title> tag.
     foreachNode(root,"title",eliminateTitles,(void*)&ts);
 
-    if(!(contents || ts.title)) return;
+		const char* title = ts.title == NULL ? getenv("title") : ts.title;
 
-    xmlNode* title = findOrCreate(head,"title");
-    xmlAddChild(title,xmlNewText(ts.title ? ts.title : contents));
+		if(title) {
+			xmlNode* title = findOrCreate(head,"title");
+			xmlAddChild(title,xmlNewText(title));
+		}
 
     // this is sneaky, modifies the <intitle/> element discovered with doTitle
-    doIntitle(oroot, ts.title ? ts.title : contents);
+    doIntitle(oroot, title);
     free(ts.title);
 }
 
