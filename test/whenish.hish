@@ -2,6 +2,7 @@ This <i>is</i> a
 <when a>a 
 is <div>
 		set</div><else/>a is <i>not</i>
+<div><when b>b is set<else/>b not set</when></div>
  set</when>
 <when b>
 foo<else/>
