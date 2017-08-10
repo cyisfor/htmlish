@@ -181,8 +181,8 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
 
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
-static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
-  if(0==strcmp(e->name,"when") || // XXX: coupling, arrrrgh!
+static bool maybeHish(xmlNode* e, struct ishctx* ctx, bool when_hack) {
+  if(when_hack || // XXX: coupling, arrrrgh!
 		 xmlHasProp(e,"hish")) {
     fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
     xmlUnlinkNode(e);
@@ -287,8 +287,11 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-
-          { bool blockElement =
+				{
+					bool when_hack = 0 == LITCMP(e->name,"when");
+					
+					bool blockElement =
+								when_hack || 
                 0 == LITCMP(e->name,"ul") ||
                 0 == LITCMP(e->name,"ol") ||
                 0 == LITCMP(e->name,"p") || // inception
@@ -298,7 +301,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
               if(blockElement) {
                 // no need to start (or have) a paragraph. This element is huge.
                 maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
-                if(maybeHish(e,ctx)) {
+                if(maybeHish(e,ctx,when_hack)) {
                   e = next;
                   continue;
                 }
