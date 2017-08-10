@@ -1,5 +1,7 @@
 #include "input.h"
 
+#include "html_when.h" // coupling.....
+
 #define LIBXML2_NEW_BUFFER
 #define _GNU_SOURCE
 #include "libxmlfixes.h"
@@ -181,9 +183,8 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
 
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
-static bool maybeHish(xmlNode* e, struct ishctx* ctx, bool when_hack) {
-  if(when_hack || // XXX: coupling, arrrrgh!
-		 xmlHasProp(e,"hish")) {
+static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
+  if(xmlHasProp(e,"hish")) {
     fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
     xmlUnlinkNode(e);
 
@@ -287,11 +288,8 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-				{
-					bool when_hack = 0 == LITCMP(e->name,"when");
-					
-					bool blockElement =
-								when_hack || 
+
+          { bool blockElement =
                 0 == LITCMP(e->name,"ul") ||
                 0 == LITCMP(e->name,"ol") ||
                 0 == LITCMP(e->name,"p") || // inception
@@ -301,7 +299,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
               if(blockElement) {
                 // no need to start (or have) a paragraph. This element is huge.
                 maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
-                if(maybeHish(e,ctx,when_hack)) {
+                if(maybeHish(e,ctx)) {
                   e = next;
                   continue;
                 }
@@ -448,6 +446,7 @@ void htmlish(xmlNode* content, int fd, bool as_children) {
 	xmlNode* oroot = xmlDocGetRootElement(content->doc);
 	
 	xmlDoc* doc = readFunky(fd,"<main htmlish markup>");
+	html_when(doc); // XXX: coupling
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
