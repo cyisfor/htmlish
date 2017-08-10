@@ -46,11 +46,12 @@ int main(int argc, char *argv[])
 		snprintf(buf,0x100,"test/parse%d.html",i);
 		fd = open(buf,O_RDONLY);
 		if(fd < 0) {
+			write(1,result,rlen);
+			printf("check test/parse%d.html\n",i);
+WRITE_ANYWAY:
 			fd = open(buf,O_WRONLY|O_CREAT,0644);
 			assert(fd >= 0);
 			write(fd,result,rlen);
-			write(1,result,rlen);
-			printf("check test/parse%d.html\n",i);
 			exit(23);
 		} else {
 			struct stat info;
@@ -65,7 +66,9 @@ int main(int argc, char *argv[])
 				fwrite(expected,info.st_size,1,stdout);
 				puts("actual:");
 				fwrite(result,rlen,1,stdout);
-				exit(23);
+				puts("^C to not update derp");
+				getchar();
+				goto WRITE_ANYWAY;
 			}
 		}
 		puts("passed.");
