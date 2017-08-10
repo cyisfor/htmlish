@@ -182,7 +182,8 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
 static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
-  if(xmlHasProp(e,"hish")) {
+  if(0==strcmp(e->name,"when") || // XXX: coupling, arrrrgh!
+		 xmlHasProp(e,"hish")) {
     fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
     xmlUnlinkNode(e);
 

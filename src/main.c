@@ -174,6 +174,7 @@ int main(void) {
 			xmlUnlinkNode(content);
 			xmlFreeNode(content);
 		}
+		html_when(output); // manage <when> logic
     htmlSaveFileFormat("-",output,"utf-8",1);
     return 0;
 }

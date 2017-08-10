@@ -32,6 +32,8 @@ libxml2/configure:
 html_when/libhtmlwhen.a: always
 	$(MAKE) -C html_when
 
+always:
+
 o/%.o: src/%.c | o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
