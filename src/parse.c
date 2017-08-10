@@ -111,10 +111,11 @@
    maybe if they're given a special attribute to indicate it */
 
 struct ishctx {
-    xmlNode* e;
-    xmlNs* ns;
-    bool inParagraph;
-    bool endedNewline;
+	xmlNode* e;
+	xmlNs* ns;
+	bool inParagraph;
+	bool endedNewline;
+	bool first;
 };
 
 bool debugging = false;
@@ -136,8 +137,9 @@ static void moveToNewDerp(xmlNode* old, void* ctx) {
 }
 
 static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
-    if(ctx->inParagraph) {
-        xmlAddChild(ctx->e,thingy);
+    if(ctx->first || ctx->inParagraph) {
+			ctx->first = false;
+			xmlAddChild(ctx->e,thingy);
     } else {
         assert(xmlAddNextSibling(ctx->e,thingy));
         ctx->e = thingy;
