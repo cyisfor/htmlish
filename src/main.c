@@ -126,7 +126,9 @@ int main(void) {
     LIBXML_TEST_VERSION;
 
 		void on_error(void * userData, xmlErrorPtr error) {
-			
+			if(error->code == XML_HTML_UNKNOWN_TAG) {
+				fprintf(stderr,"um %s %s %s\n",error->str1,error->str2,error->str3);
+			}
 			fprintf(stderr,"um %d %s %s\n",error->code, error->message,
 							error->level == XML_ERR_FATAL ? "fatal..." : "ok");
 			return;
