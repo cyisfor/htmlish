@@ -1,13 +1,20 @@
+#define _GNU_SOURCE // memcmp
+
 #include "parse.h"
 
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
 #include <libxml/tree.h> // xmlCopyDoc
 
+#include <sys/mman.h> // mmap
+#include <sys/stat.h>
+
 #include <stdio.h>
 #include <assert.h>
+#include <string.h> // memcmp
 
 #include <fcntl.h> // open, O_RDONLY
+#include <unistd.h> // close
 
 #define LITLEN(a) (a),sizeof(a)-1
 
