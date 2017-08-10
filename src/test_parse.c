@@ -32,16 +32,35 @@ int main(int argc, char *argv[])
 		assert(content);
 		htmlish(content,fd);
 		close(fd);
-		htmlDocDump(stdout,doc);
+		xmlChar* result = NULL;
+		int rlen = 0;
+		htmlDocDumpMemory(doc,&result,&rlen);
 		snprintf(buf,0x100,"test/parse%d.html",i);
 		fd = open(buf,O_RDONLY);
 		if(fd < 0) {
 			fd = open(buf,O_WRONLY|O_CREAT,0644);
 			assert(fd >= 0);
-			htmlDocDump(fdopen(fd,"w"),doc);
+			write(fd,result,rlen);
+			write(1,result,rlen);
 			printf("check test/parse%d.html\n",i);
 			exit(23);
+		} else {
+			struct stat info;
+			fstat(fd, &info);
+			char* expected = mmap(NULL,info.st_size,PROT_READ,MAP_PRIVATE,fd,0);
+			close(fd);
+			if(info.st_size != rlen) {
+				printf("sizes don't match! expected: %d actual: %d\n",info.st_size,rlen);
+			}
+			if(info.st_size != rlen || 0 != memcmp(expected,result,rlen)) {
+				puts("expected:");
+				fwrite(expected,info.st_size,1,stdout);
+				puts("actual:");
+				fwrite(result,rlen,1,stdout);
+				exit(23);
+			}
 		}
+		puts("passed.");
 	}
 			
 	return 0;
