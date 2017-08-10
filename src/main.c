@@ -125,6 +125,13 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
+		void on_error(void * userData, xmlErrorPtr error) {
+			fprintf(stderr,"um %s %s\n",error->message,
+							error->level == XML_ERR_FATAL ? "fatal..." : "ok");
+			return;
+		}
+		xmlSetStructuredErrorFunc(NULL,on_error);
+
     setupInput();
 
     xmlDoc* output;
