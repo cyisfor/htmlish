@@ -1,0 +1,3 @@
+before<i>inline element</i><div>element</div> after
+before
+<div>element</div>
