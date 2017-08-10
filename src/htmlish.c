@@ -370,7 +370,12 @@ void doStyle(xmlNode* root, xmlNode* head) {
 }
 
 static void doIntitle2(xmlNode* target, void* ctx) {
+	if(ctx) {
     xmlReplaceNode(target,xmlNewText(ctx));
+	} else {
+		xmlUnlinkNode(target);
+		xmlFreeNode(target);
+	}
 }
 
 void doIntitle(xmlNode* oroot, const char* title) {

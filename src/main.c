@@ -2,6 +2,7 @@
 #include "htmlish.h"
 #include "libxmlfixes.h"
 #include <libxml/HTMLparser.h>
+#include <libxml/HTMLtree.h>
 #include <libxml/xpath.h> // NodeSetPtr
 #include <stdbool.h>
 #include <assert.h>
