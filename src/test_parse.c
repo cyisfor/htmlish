@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 		xmlDoc* doc = xmlCopyDoc(template, 1);
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
-		htmlish(content,fd);
+		htmlish(content,fd,true);
 		close(fd);
 		xmlChar* result = NULL;
 		int rlen = 0;

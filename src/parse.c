@@ -422,10 +422,11 @@ static void doMetas(xmlNode* root, xmlNode* head) {
     foreachNode(root,"meta",moveToNewDerp,head);
 }
 
-void htmlish(xmlNode* content, int fd) {
+void htmlish(xmlNode* content, int fd, bool as_children) {
 	struct ishctx ctx = {
 		.endedNewline = false,
 		.e = content
+		.first = as_children
 	};
 
 	xmlNode* oroot = xmlDocGetRootElement(content->doc);
