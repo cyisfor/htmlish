@@ -1,7 +1,9 @@
 ( echo "create libhtmlish.a"
-	echo "addlib html_when/libhtmlwhen.a"
 	for f in "$@"; do
-		if 
-EOF
-
+		if [[ "${f:-2}" -eq ".a" ]]; then
+				echo "addlib $f"
+		else
+				echo "addmod $f"
+		fi
+	done
 ) | ar -M
