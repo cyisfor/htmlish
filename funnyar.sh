@@ -9,7 +9,6 @@ for f in "$@"; do
 		fi
 done
 echo "save"
-echo "list"
 echo "end"
 
 
