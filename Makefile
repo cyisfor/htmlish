@@ -1,4 +1,4 @@
-all: test_parse test_copynode parse unparse
+all: test_parse test_copynode parse unparse libhtmlish.a
 
 CFLAGS+=-g -Ihtml_when/libxml2/include/ -Ihtml_when/source/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
