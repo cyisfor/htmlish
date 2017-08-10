@@ -1,9 +1,8 @@
 echo "create $1"
 shift
 for f in "$@"; do
-		echo ${f:-1}
-
-		if [[ "${f:-1}" = ".a" ]]; then
+		tail=${f:${#f}-2}
+		if [[ "$tail" = ".a" ]]; then
 				echo "addlib $f"
 		else
 				echo "addmod $f"
