@@ -23,6 +23,10 @@ N=main htmlish input
 parse: $O 
 	$(LINK)
 
+N=htmlish input
+libhtmlish.a: $O
+	$(AR) $(ARFLAGS) $@ $^
+
 html_when/libhtmlwhen.a: always
 	$(MAKE) -C html_when
 
