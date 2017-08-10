@@ -1,1 +1,2 @@
-before<i>inline element</i><div>element</div> after
+<i>inline element</i> then stuff<div>element</div> 
+after

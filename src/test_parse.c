@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 			write(1,result,rlen);
 			printf("check test/parse%d.html\n",i);
 WRITE_ANYWAY:
-			fd = open(buf,O_WRONLY|O_CREAT,0644);
+			fd = open(buf,O_WRONLY|O_CREAT|O_TRUNC,0644);
 			assert(fd >= 0);
 			write(fd,result,rlen);
 			exit(23);
