@@ -1,0 +1,3 @@
+Checks based on environment variables at runtime, so you don’t get situations where it’s half censored, half not. <when> must have one or two attributes. If two, one attribute must be “not” which negates the condition. If the other attribute starts with ! that also negates the condition. Possibly twice. Once any ! has been stripped off, the condition is “the environment variable by that name exists.”
+
+You can do <when something="silly">call the general</when> that only evaluates as true if the environment variable “something” is set to “silly” The string is URL decoded before comparing with the environment. Don’t do <when not="1" something="silly">...</when> because XML sucks and you should just specify an attribute w/out an equals sign when you want it to merely exist.
