@@ -137,9 +137,15 @@ static void moveToNewDerp(xmlNode* old, void* ctx) {
 }
 
 static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
-    if(ctx->first || ctx->inParagraph) {
-			ctx->first = false;
+    if(ctx->first) {
 			xmlAddChild(ctx->e,thingy);
+			ctx->first = false;
+			ctx->e = thingy;
+			return;
+		}
+		if(ctx->inParagraph) {
+			xmlAddChild(ctx->e,thingy);
+			// but don't set ctx->e since still adding to it
     } else {
         assert(xmlAddNextSibling(ctx->e,thingy));
         ctx->e = thingy;
@@ -425,7 +431,7 @@ static void doMetas(xmlNode* root, xmlNode* head) {
 void htmlish(xmlNode* content, int fd, bool as_children) {
 	struct ishctx ctx = {
 		.endedNewline = false,
-		.e = content
+		.e = content,
 		.first = as_children
 	};
 
