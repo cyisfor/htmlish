@@ -148,7 +148,13 @@ int main(void) {
 		doByFile(output,"footer");
 
 		bool as_child = false;
-		htmlish(getContent(xmlDocGetRootElement(output),false,&as_child),0,as_child);
+		xmlNode* content = getContent(xmlDocGetRootElement(output),false,&as_child);
+		htmlish(content,0,as_child);
+		if(!as_child) {
+			// throw away placeholder node
+			xmlUnlinkNode(content);
+			xmlFreeNode(content);
+		}
     htmlSaveFileFormat("-",output,"utf-8",1);
     return 0;
 }
