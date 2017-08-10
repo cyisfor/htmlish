@@ -4,10 +4,12 @@
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
 #include <libxml/xpath.h> // NodeSetPtr
+#include <libxml/xmlerror.h> // Set/GetError
 #include <stdbool.h>
 #include <assert.h>
 #include <fcntl.h> // open, O_*
 #include <unistd.h> // close
+#include <string.h> // strlen, memcmp
 
 const char defaultTemplate[] =
   "<!DOCTYPE html>\n"
@@ -125,10 +127,6 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
-
-		void (*old_error)(void * userData, xmlErrorPtr error);
-		old_error = xmlGetStructuredErrorFunc(NULL);
-
 		void on_error(void * userData, xmlErrorPtr error) {
 			if(error->code == XML_HTML_UNKNOWN_TAG) {
 				const char* name = error->str1;
@@ -138,7 +136,6 @@ int main(void) {
 					// not errors
 					return;
 			}
-			if(old_error) return old_error(userData,error);
 			fprintf(stderr,"um %d %s %s\n",error->code, error->message,
 							error->level == XML_ERR_FATAL ? "fatal..." : "ok");
 			return;
