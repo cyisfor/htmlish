@@ -304,9 +304,10 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
               } else {
                 //start a paragraph if this element is a wimp
                 //but only if the last text node ended on a newline.
+								//or at the beginning
                 //otherwise the last text node and this should be in the same
                 //paragraph
-                if(ctx->endedNewline) {
+                if(ctx->first || ctx->endedNewline) {
                   static char buf[0x100] = "";
                   if(debugging)
                     snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
