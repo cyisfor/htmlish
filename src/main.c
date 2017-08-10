@@ -1,3 +1,5 @@
+#include "html_when.h"
+
 #include "input.h"
 #include "htmlish.h"
 #include "libxmlfixes.h"
@@ -133,7 +135,7 @@ int main(void) {
 				size_t nlen = strlen(name);
 				#define IS(a) (nlen == sizeof(a)-1) && (0 == memcmp(name,a,sizeof(a)-1))
 				if(IS("top") || IS("content") || IS("header") || IS("footer") || IS("intitle"))
-					// not errors
+					// not errors, these get removed by template stuffs
 					return;
 			}
 			fprintf(stderr,"um %d %s %s\n",error->code, error->message,
