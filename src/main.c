@@ -18,25 +18,16 @@ const char defaultTemplate[] =
   "</body></html>";
 
 
-static xmlNode* getContent(xmlNode* oroot, bool createBody) {
+static xmlNode* getContent(xmlNode* oroot, bool createBody, bool* as_child) {
   xmlNode* content = fuckXPath(oroot,"content");
   if(content) {
-    xmlNode* new = xmlNewNode(content->ns, "div");
-
-		xmlSetProp(new,"id","content");
-    xmlReplaceNode(content,new);
-    xmlFreeNode(content);
-		return new;
-  } 
+		*as_child = false;
+		return content;
+  }
+	*as_child = true;
 	content = fuckXPathDivId(oroot,"content");
 	if(content) {
-		if(content->children == NULL) {
-			xmlNode* text = xmlNewTextLen("",0);
-			assert(text);
-			xmlAddChild(content,text);
-		}
-		assert(content->children);
-		return content->children;
+		return content;
 	}
 
 	if(false == createBody) {
@@ -45,7 +36,7 @@ static xmlNode* getContent(xmlNode* oroot, bool createBody) {
 	
 	xmlNode* body = findOrCreate(oroot,"body");
 	assert(body != NULL);
-  return body->children;
+  return body;
 }
 
 
@@ -155,7 +146,8 @@ int main(void) {
 		doByFile(output,"top");
 		doByFile(output,"footer");
 
-		htmlish(getContent(xmlDocGetRootElement(output),false),0);
+		bool as_child = false;
+		htmlish(getContent(xmlDocGetRootElement(output),false,&as_child),0,as_child);
     htmlSaveFileFormat("-",output,"utf-8",1);
     return 0;
 }
