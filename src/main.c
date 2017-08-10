@@ -134,7 +134,8 @@ int main(void) {
 				const char* name = error->str1;
 				size_t nlen = strlen(name);
 				#define IS(a) (nlen == sizeof(a)-1) && (0 == memcmp(name,a,sizeof(a)-1))
-				if(IS("top") || IS("content") || IS("header") || IS("footer") || IS("intitle"))
+				if(IS("top") || IS("content") || IS("header") || IS("footer") || IS("intitle")
+					 || IS("when")) // XXX: coupling arrrrgh
 					// not errors, these get removed by template stuffs
 					return;
 			}

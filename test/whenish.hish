@@ -1,2 +1,8 @@
 This <i>is</i> a 
-<when a>a is set<else/>a is not set
+<when a>a 
+is <div>
+		set</div><else/>a is <i>not</i>
+ set</when>
+<when b>
+foo<else/>
+bar</when>
