@@ -125,10 +125,20 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
+
+		void (*old_error)(void * userData, xmlErrorPtr error);
+		old_error = xmlGetStructuredErrorFunc(NULL);
+
 		void on_error(void * userData, xmlErrorPtr error) {
 			if(error->code == XML_HTML_UNKNOWN_TAG) {
-				fprintf(stderr,"um %s %s %s\n",error->str1,error->str2,error->str3);
+				const char* name = error->str1;
+				size_t nlen = strlen(name);
+				#define IS(a) (nlen == sizeof(a)-1) && (0 == memcmp(name,a,sizeof(a)-1))
+				if(IS("top") || IS("content") || IS("header") || IS("footer") || IS("intitle"))
+					// not errors
+					return;
 			}
+			if(old_error) return old_error(userData,error);
 			fprintf(stderr,"um %d %s %s\n",error->code, error->message,
 							error->level == XML_ERR_FATAL ? "fatal..." : "ok");
 			return;
