@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
 		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
 		if(fd < 0) break;
-		printf("test %s\n",buf);
+		printf("test %d...",i);
+		fflush(stdout);
 		xmlDoc* doc = xmlCopyDoc(template, 1);
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
