@@ -411,10 +411,10 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
 		const char* title = ts.title == NULL ? getenv("title") : ts.title;
 
 		if(title) {
-			xmlNode* title = findOrCreate(head,"title");
-			xmlNodeAddContent(title,title);
-			puts("htmlish title:");
-			htmlNodeDumpFile(stdout,title->doc,title);
+			xmlNode* te = findOrCreate(head,"title");
+			xmlNodeAddContent(title,te);
+			printf("\nhtmlish title %s:\n",title);
+			htmlNodeDumpFile(stdout,te->doc,te);
 		}
 
     // this is sneaky, modifies the <intitle/> element discovered with doTitle
