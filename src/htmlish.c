@@ -412,6 +412,9 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
 
 		if(title) {
 			xmlNode* te = findOrCreate(head,"title");
+			xmlChar* thead = getenv("titlehead");
+			if(thead)
+				xmlNodeAddContent(te,thead);
 			xmlNodeAddContent(te,title);
 		}
 
