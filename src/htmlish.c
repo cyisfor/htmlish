@@ -448,7 +448,7 @@ void htmlish(xmlNode* content, int fd, bool as_children) {
 	xmlNode* oroot = xmlDocGetRootElement(content->doc);
 	
 	xmlDoc* doc = readFunky(fd,"<main htmlish markup>");
-	html_when(doc); // XXX: coupling
+	html_when((xmlNode*)doc); // XXX: coupling
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
