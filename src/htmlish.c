@@ -412,9 +412,7 @@ void doTitle(xmlNode* oroot, xmlNode* root, xmlNode* head) {
 
 		if(title) {
 			xmlNode* te = findOrCreate(head,"title");
-			xmlNodeAddContent(title,te);
-			printf("\nhtmlish title %s:\n",title);
-			htmlNodeDumpFile(stdout,te->doc,te);
+			xmlNodeAddContent(te,title);
 		}
 
     // this is sneaky, modifies the <intitle/> element discovered with doTitle
