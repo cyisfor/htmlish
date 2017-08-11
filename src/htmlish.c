@@ -441,16 +441,28 @@ static void doMetas(xmlNode* root, xmlNode* head) {
     foreachNode(root,"meta",moveToNewDerp,head);
 }
 
+void htmlish_str(xmlNode* content, const char* s, size_t l, bool as_children) {
+	xmlNode* oroot = xmlDocGetRootElement(content->doc);
+	
+	xmlDoc* doc = strFunky(s,l);
+	return htmlish_doc(oroot,content,doc,as_children);
+}
+
 void htmlish(xmlNode* content, int fd, bool as_children) {
+
+	xmlNode* oroot = xmlDocGetRootElement(content->doc);
+	
+	xmlDoc* doc = readFunky(fd,"bad file passed");
+	return htmlish_doc(oroot,content,doc,as_children);
+}
+
+void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children) {
 	struct ishctx ctx = {
 		.endedNewline = false,
 		.e = content,
 		.first = as_children
 	};
 
-	xmlNode* oroot = xmlDocGetRootElement(content->doc);
-	
-	xmlDoc* doc = readFunky(fd,"<main htmlish markup>");
 	html_when((xmlNode*)doc); // XXX: coupling
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
