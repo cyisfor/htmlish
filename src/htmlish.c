@@ -187,7 +187,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root);
 
 static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
   if(xmlHasProp(e,"hish")) {
-    fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
+    //fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
     xmlUnlinkNode(e);
 
     xmlUnsetProp(e,"hish");
