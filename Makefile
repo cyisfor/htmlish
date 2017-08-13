@@ -33,13 +33,12 @@ html_when/libhtmlwhen.a: descend
 descend:
 	$(MAKE) -C html_when libhtmlwhen.a
 
-o/%.o: src/%.c | o
+.PHONY: descend
+
+o/%.o: src/%.c $(LIBXML)/include/xmlversion.h | o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 o:
 	mkdir $@
-
-N=htmlish
-$O: $(LIBXML)/include/xmlversion.h
 
 $(LIBXML)/include/xmlversion.h: descend
