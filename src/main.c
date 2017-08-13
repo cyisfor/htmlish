@@ -27,10 +27,11 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 	if(!path) return;
 
 	int inp = open(path,O_RDONLY);
-	xmlDoc* doc = readFunky(inp,path);
+	size_t plen = strlen(path);
+	xmlDoc* doc = readFunky(inp,path,plen);
 	close(inp);
 	if(!doc) {
-		fprintf(stderr,"Couldn't parse %s",path);
+		fprintf(stderr,"Couldn't parse %.*s",plen,path);
 		exit(5);
 	}
 	xmlNode* root = xmlDocGetRootElement(doc);
