@@ -39,5 +39,5 @@ o/%.o: src/%.c | o
 o:
 	mkdir $@
 
-N=test_parse htmlish
-$O: html_when/libhtmlwhen.a
+N=htmlish
+$O: $(LIBXML)/include/xmlversion.h
