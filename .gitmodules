@@ -1,3 +1,4 @@
-[submodule "libxml2"]
-	path = libxml2
-	url = ./libxml2
+[submodule "html_when"]
+	path = html_when
+	url = https://github.com/cyisfor/html_when
+	ignore = untracked
