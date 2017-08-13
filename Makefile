@@ -37,3 +37,9 @@ o/%.o: src/%.c | o
 
 o:
 	mkdir $@
+
+N=test_parse
+$O: $(LIBXML)/xmlversion.h
+
+$(LIBXML)/xmlversion.h:
+	make -C html_when
