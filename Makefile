@@ -29,7 +29,7 @@ libhtmlish.a: $O
 	sh ./funnyar.sh $@ $O | ar -M
 
 html_when/libhtmlwhen.a: always
-	$(MAKE) -C html_when
+	$(MAKE) -C html_when libhtmlwhen.a
 
 always:
 
@@ -39,8 +39,5 @@ o/%.o: src/%.c | o
 o:
 	mkdir $@
 
-N=test_parse
-$O: $(LIBXML)/include/xmlversion.h
-
-$(LIBXML)/include/xmlversion.h:
-	make -C html_when
+N=test_parse htmlish
+$O: html_when/libhtmlwhen.a
