@@ -28,10 +28,10 @@ N=htmlish input
 libhtmlish.a: $O
 	sh ./funnyar.sh $@ $O | ar -M
 
-html_when/libhtmlwhen.a: always
-	$(MAKE) -C html_when libhtmlwhen.a
+html_when/libhtmlwhen.a: descend
 
-always:
+descend:
+	$(MAKE) -C html_when libhtmlwhen.a
 
 o/%.o: src/%.c | o
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -41,3 +41,5 @@ o:
 
 N=htmlish
 $O: $(LIBXML)/include/xmlversion.h
+
+$(LIBXML)/include/xmlversion.h: descend
