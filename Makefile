@@ -1,6 +1,6 @@
 all: test_parse test_copynode parse unparse libhtmlish.a
 
-CFLAGS+=-g -Ihtml_when/libxml2/include/ -Ihtml_when/source/
+CFLAGS+=-g -Ihtml_when/libxml2/include/ -Ihtml_when/src/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/-xml2//g')
 
