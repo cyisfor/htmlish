@@ -1,10 +1,5 @@
 all: test_parse test_copynode parse unparse libhtmlish.a
 
-
-o/%.o: src/%.c libxml2/$(XMLVERSION) | o
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-
 XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g -Ilibxml2/include -Ihtml_when/src/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -12,6 +7,11 @@ LDLIBS+=$(shell xml2-config --libs | sed -e's/-xml2//g')
 
 O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a html_when/libhtmlwhen.a 
 S=$(patsubst %,src/%.c,$N)
+
+
+o/%.o: src/%.c libxml2/$(XMLVERSION) | o
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 
 N=test_copynode
 test_copynode: $O 
