@@ -4,6 +4,7 @@
 #include <libxml/nanoftp.h>
 
 #include <sys/stat.h>
+#include <sys/sendfile.h>
 
 #include <wordexp.h>
 
