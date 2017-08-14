@@ -32,7 +32,7 @@ html_when/libhtmlwhen.a: descend
 descend:
 	$(MAKE) -C html_when libhtmlwhen.a
 
-.PHONY: descend
+.PHONY: descend html_when
 
 o/%.o: src/%.c libxml2/$(XMLVERSION) | o
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -49,9 +49,10 @@ libxml2: ./html_when/libxml2
 ./html_when/libxml2: html_when
 
 html_when: 
-	if [[ -d $@ ]]; then \
+	if [[ ! -d $@ ]]; then \
 		git clone --recurse-submodules https://github.com/cyisfor/html_when.git pending-$@ && \
 		$(MAKE) -C pending-$@ && \
-		mv pending-$@ $@ \
+		mv pending-$@ $@ ;\
 	else \
-		cd $@ && git pull
+		cd $@ && git pull; \
+	fi
