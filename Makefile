@@ -9,7 +9,7 @@ O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a html_when/libhtmlwhen.a
 S=$(patsubst %,src/%.c,$N)
 
 
-o/%.o: src/%.c libxml2/$(XMLVERSION) | o
+o/%.o: src/%.c | o libxml2/$(XMLVERSION)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
@@ -38,7 +38,7 @@ libxml2/.libs/libxml2.a html_when/libhtmlwhen.a: descend
 descend:
 	$(MAKE) -C html_when libhtmlwhen.a
 
-.PHONY: html_when
+.PHONY: 	html_when
 
 o:
 	mkdir $@
