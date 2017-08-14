@@ -3,12 +3,13 @@ function sync {
 				source=$dir
 				adjremote=1
 		else
-				exit 23
 				source=$remote
 		fi
 		if [[ -d $dest ]]; then
+				[[ -n "$nocheck" ]] && return
 				cd $dest
-				git pull $source
+				git pull local master
+				git pull origin master
 				cd ..
 		else
 				git clone $source $dest
