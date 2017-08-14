@@ -43,6 +43,7 @@ o:
 libxml2/include/xmlversion.h: descend
 
 setup: libxml2 html_when
+	$(MAKE) -C html_when setup
 
 libxml2: ./html_when/libxml2
 	ln -rs $< $@
@@ -51,7 +52,6 @@ libxml2: ./html_when/libxml2
 define SYNC
 	if [[ ! -d $1 ]]; then \
 		git clone --recurse-submodules $2 pending-$1 && \
-		$(MAKE) -C pending-$1 && \
 		mv pending-$1 $1 ; \
 	else \
 		cd $1 && git pull; \
