@@ -49,12 +49,12 @@ libxml2: ./html_when/libxml2
 ./html_when/libxml2: html_when
 
 define SYNC
-	if [[ ! -d $@ ]]; then
-		git clone --recurse-submodules $2 pending-$@ &&
-		$(MAKE) -C pending-$@ &&
-		mv pending-$@ $@ ;
-	else
-		cd $@ && git pull;
+	if [[ ! -d $@ ]]; then \
+		git clone --recurse-submodules $2 pending-$@ && \
+		$(MAKE) -C pending-$@ && \
+		mv pending-$@ $@ ; \
+	else \
+		cd $@ && git pull; \
 	fi
 endef
 
