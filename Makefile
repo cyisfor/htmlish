@@ -48,6 +48,6 @@ setup:
 	sh setup.sh
 	$(MAKE) -C html_when setup
 
-clone: setup
+push: setup
 	[[ -n "$(remote)" ]]
-	$(MAKE) -C html_when clone remote=$(remote)/html_when
+	$(MAKE) -C html_when push remote=$(remote)/html_when
