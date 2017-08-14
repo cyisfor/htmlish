@@ -1,4 +1,10 @@
 all: test_parse test_copynode parse unparse libhtmlish.a
+
+
+o/%.o: src/%.c libxml2/$(XMLVERSION) | o
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+
 XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g -Ilibxml2/include -Ihtml_when/src/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -33,9 +39,6 @@ descend:
 	$(MAKE) -C html_when libhtmlwhen.a
 
 .PHONY: descend html_when
-
-o/%.o: src/%.c libxml2/$(XMLVERSION) | o
-	$(CC) $(CFLAGS) -c -o $@ $<
 
 o:
 	mkdir $@
