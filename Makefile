@@ -50,7 +50,7 @@ libxml2: ./html_when/libxml2
 ./html_when/libxml2: html_when
 
 define SYNC
-	if [[ ! -d $1 ]]; then \
+	@if [[ ! -d $1 ]]; then \
 		git clone $2 pending-$1 && \
 		mv pending-$1 $1 ; \
 	else \
@@ -59,5 +59,5 @@ define SYNC
 endef
 
 html_when:
-	$(call SYNC,$@,../html_when)
-#	$(call SYNC,$@,https://github.com/cyisfor/html_when.git)
+#	$(call SYNC,$@,/home/code/html_when)
+	$(call SYNC,$@,https://github.com/cyisfor/html_when.git)
