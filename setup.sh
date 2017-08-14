@@ -19,12 +19,7 @@ function sync {
 		fi
 }
 	
-dir=/extra/home/packages/git/libxml2
-remote=git://git.gnome.org/libxml2
-dest=libxml2
-sync
-
-dir=/home/code/note
-remote=https://github.com/cyisfor/note.git
-dest=note
+dir=/extra/home/code/html_when
+remote=https://github.com/cyisfor/html_when.git
+dest=html_when
 sync
