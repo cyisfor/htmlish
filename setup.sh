@@ -3,6 +3,7 @@ function sync {
 				source=$dir
 				adjremote=1
 		else
+				exit 23
 				source=$remote
 		fi
 		if [[ -d $dest ]]; then
