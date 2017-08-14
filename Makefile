@@ -27,7 +27,7 @@ N=htmlish input
 libhtmlish.a: $O
 	sh ./funnyar.sh $@ $O | ar -M
 
-html_when/libhtmlwhen.a: descend
+libxml2/.libs/libxml2.a html_when/libhtmlwhen.a: descend
 
 descend:
 	$(MAKE) -C html_when libhtmlwhen.a
