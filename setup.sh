@@ -14,7 +14,7 @@ function sync {
 				git clone $source $dest
 				if [[ -n "$adjremote" ]]; then
 						cd $dest
-						git remote origin set-url $remote
+						git remote set-url origin $remote
 						git remote add local $source
 						cd ..
 				fi
