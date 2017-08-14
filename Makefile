@@ -48,11 +48,15 @@ libxml2: ./html_when/libxml2
 	ln -rs $< $@
 ./html_when/libxml2: html_when
 
-html_when: 
-	if [[ ! -d $@ ]]; then \
-		git clone --recurse-submodules https://github.com/cyisfor/html_when.git pending-$@ && \
-		$(MAKE) -C pending-$@ && \
-		mv pending-$@ $@ ;\
-	else \
-		cd $@ && git pull; \
+define SYNC
+	if [[ ! -d $@ ]]; then
+		git clone --recurse-submodules $2 pending-$@ &&
+		$(MAKE) -C pending-$@ &&
+		mv pending-$@ $@ ;
+	else
+		cd $@ && git pull;
 	fi
+endef
+
+html_when:
+	$(call SYNC,html_when,https://github.com/cyisfor/html_when.git)
