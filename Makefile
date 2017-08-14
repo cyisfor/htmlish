@@ -9,7 +9,7 @@ O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a html_when/libhtmlwhen.a
 S=$(patsubst %,src/%.c,$N)
 
 
-o/%.o: src/%.c libxml2/$(XMLVERSION) | o
+o/%.o: src/%.c | o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
