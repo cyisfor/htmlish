@@ -43,5 +43,5 @@ o:
 libxml2/include/xmlversion.h: descend
 
 setup:
-	git clone https://github.com/cyisfor/html_when.git html_when
+	sh setup.sh
 	$(MAKE) -C html_when setup
