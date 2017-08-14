@@ -26,7 +26,7 @@ function uplink {
 		ln -rs $source $2
 }
 
-dir=/extra/home/code/html_when
+dir=/home/code/html_when
 remote=https://github.com/cyisfor/html_when.git
 dest=html_when
 sync
