@@ -42,22 +42,6 @@ o:
 
 libxml2/include/xmlversion.h: descend
 
-setup: libxml2 html_when
+setup:
+	git clone https://github.com/cyisfor/html_when.git html_when
 	$(MAKE) -C html_when setup
-
-libxml2: ./html_when/libxml2
-	[[ -h $@ ]] || ln -rs $< $@
-./html_when/libxml2: html_when
-
-define SYNC
-	@if [[ ! -d $1 ]]; then \
-		git clone $2 pending-$1 && \
-		mv pending-$1 $1 ; \
-	else \
-		cd $1 && git pull; \
-	fi
-endef
-
-html_when:
-#	$(call SYNC,$@,/home/code/html_when)
-	$(call SYNC,$@,https://github.com/cyisfor/html_when.git)
