@@ -18,8 +18,16 @@ function sync {
 				fi
 		fi
 }
-	
+
+function uplink {
+		source=$1/$2
+		[[ -L $source ]] && return;
+		ln -rs $source $2
+}
+
 dir=/extra/home/code/html_when
 remote=https://github.com/cyisfor/html_when.git
 dest=html_when
 sync
+
+uplink ./html_when libxml2
