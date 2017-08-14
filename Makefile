@@ -46,7 +46,7 @@ setup: libxml2 html_when
 	$(MAKE) -C html_when setup
 
 libxml2: ./html_when/libxml2
-	[[ -l $@ ]] || ln -rs $< $@
+	[[ -h $@ ]] || ln -rs $< $@
 ./html_when/libxml2: html_when
 
 define SYNC
