@@ -59,4 +59,5 @@ define SYNC
 endef
 
 html_when:
-	$(call SYNC,$@,https://github.com/cyisfor/html_when.git)
+	$(call SYNC,$@,../html_when)
+#	$(call SYNC,$@,https://github.com/cyisfor/html_when.git)
