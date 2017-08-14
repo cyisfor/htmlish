@@ -23,7 +23,7 @@ function sync {
 
 function uplink {
 		source=$1/$2
-		[[ -L $source ]] && return;
+		[[ -L $2 ]] && return;
 		echo linkin $source
 		ln -rs $source $2
 }
