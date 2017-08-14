@@ -14,6 +14,7 @@ function sync {
 				if [[ -n "$adjremote" ]]; then
 						cd $dest
 						git remote origin set-url $remote
+						git remote add local $source
 						cd ..
 				fi
 		fi
