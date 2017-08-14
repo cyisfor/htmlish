@@ -1,0 +1,1 @@
+rm -f *.o parse make test test.html
