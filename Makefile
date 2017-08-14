@@ -47,3 +47,7 @@ libxml2/$(XMLVERSION): descend
 setup:
 	sh setup.sh
 	$(MAKE) -C html_when setup
+
+clone: setup
+	[[ -n "$(remote)" ]]
+	$(MAKE) -C html_when clone remote=$(remote)/html_when
