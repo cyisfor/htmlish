@@ -9,11 +9,8 @@ O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a html_when/libhtmlwhen.a
 S=$(patsubst %,src/%.c,$N)
 
 
-o/%.o: src/%.c | o 
+o/%.o: src/%.c libxml2/$(XMLVERSION) | o 
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-o: libxml2/$(XMLVERSION)
-
 
 N=test_copynode
 test_copynode: $O 
@@ -45,7 +42,7 @@ descend:
 o:
 	mkdir $@
 
-libxml2/include/xmlversion.h: descend
+libxml2/$(XMLVERSION): descend
 
 setup:
 	sh setup.sh
