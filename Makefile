@@ -1,11 +1,10 @@
 all: test_parse test_copynode parse unparse libhtmlish.a
-LIBXML:=html_when/libxml2/
 XMLVERSION:=include/libxml/xmlversion.h
-CFLAGS+=-g -I$(LIBXML)/include -Ihtml_when/src/
+CFLAGS+=-g -Ilibxml2/include -Ihtml_when/src/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/-xml2//g')
 
-O=$(patsubst %,o/%.o,$N) $(LIBXML)/.libs/libxml2.a html_when/libhtmlwhen.a 
+O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a html_when/libhtmlwhen.a 
 S=$(patsubst %,src/%.c,$N)
 
 N=test_copynode
@@ -35,10 +34,24 @@ descend:
 
 .PHONY: descend
 
-o/%.o: src/%.c $(LIBXML)/$(XMLVERSION) | o
+o/%.o: src/%.c libxml2/$(XMLVERSION) | o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 o:
 	mkdir $@
 
-$(LIBXML)/include/xmlversion.h: descend
+libxml2/include/xmlversion.h: descend
+
+setup: libxml2 html_when
+
+libxml2: ./html_when/libxml2
+	ln -rs $< $@
+./html_when/libxml2: html_when
+
+html_when: 
+	if [[ -d $@ ]]; then \
+		git clone --recurse-submodules https://github.com/cyisfor/html_when.git pending-$@ && \
+		$(MAKE) -C pending-$@ && \
+		mv pending-$@ $@ \
+	else \
+		cd $@ && git pull
