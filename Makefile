@@ -52,7 +52,10 @@ setup: ./setup.sh
 git-tools/funcs.sh:
 	git submodule update --init
 
+git-tools/pushcreate:
+	$(MAKE) -C git-tools
 
-push: setup
+push: setup ./git-tools/pushcreate 
 	[[ -n "$(remote)" ]]
+	./git-tools/pushcreate $(remote)
 	$(MAKE) -C html_when push remote=$(remote)/html_when
