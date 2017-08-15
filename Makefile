@@ -57,5 +57,5 @@ git-tools/pushcreate:
 
 push: setup ./git-tools/pushcreate 
 	[[ -n "$(remote)" ]]
-	./git-tools/pushcreate "$(remote)/html_when"
+	./git-tools/pushcreate "$(remote)"
 	$(MAKE) -C html_when push remote="$(remote)/html_when"
