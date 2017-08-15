@@ -44,9 +44,14 @@ o:
 
 libxml2/$(XMLVERSION): descend
 
-setup:
-	sh setup.sh
+setup: ./setup.sh
+	sh ./setup.sh
 	$(MAKE) -C html_when setup
+
+./setup.sh: git-tools/funcs.sh
+git-tools/funcs.sh:
+	git submodule update --init
+
 
 push: setup
 	[[ -n "$(remote)" ]]
