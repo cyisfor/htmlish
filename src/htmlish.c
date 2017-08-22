@@ -3,10 +3,10 @@
 
 #include "input.h"
 
-#include "wanted_tags.h"
-#include "html_when.h" // coupling.....
+#include "libxmlfixes/wanted_tags.h"
+#include "libxmlfixes/libxmlfixes.h"
 
-#include "libxmlfixes.h"
+#include "html_when.h" // coupling.....
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
