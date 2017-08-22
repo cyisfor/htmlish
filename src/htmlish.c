@@ -324,7 +324,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
         default:
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
-        e = next;
     }
 }
 
