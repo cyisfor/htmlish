@@ -320,10 +320,11 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 							ctx->endedNewline = false;
 						}
 					};
-					break;
+					// fall through
         default:
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
+        e = next;
     }
 }
 
