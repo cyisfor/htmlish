@@ -2,7 +2,7 @@
 
 #include "input.h"
 #include "htmlish.h"
-#include "libxmlfixes.h"
+#include "libxmlfixes/libxmlfixes.h"
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
 #include <libxml/xpath.h> // NodeSetPtr
