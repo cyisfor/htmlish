@@ -3,7 +3,7 @@
 
 #include "input.h"
 
-
+#include "wanted_tags.h"
 #include "html_when.h" // coupling.....
 
 #include "libxmlfixes.h"
@@ -290,39 +290,37 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     e->content);
             break;
         case XML_ELEMENT_NODE:
-
-          { bool blockElement =
-                0 == LITCMP(e->name,"ul") ||
-                0 == LITCMP(e->name,"ol") ||
-                0 == LITCMP(e->name,"p") || // inception
-                0 == LITCMP(e->name,"div") ||
-                0 == LITCMP(e->name,"table") ||
-                0 == LITCMP(e->name,"blockquote");
-              if(blockElement) {
-                // no need to start (or have) a paragraph. This element is huge.
-                maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
-                if(maybeHish(e,ctx)) {
-                  e = next;
-                  continue;
-                }
-              } else {
-                //start a paragraph if this element is a wimp
-                //but only if the last text node ended on a newline.
-								//or at the beginning
-                //otherwise the last text node and this should be in the same
-                //paragraph
-                if(ctx->first || ctx->endedNewline) {
-                  static char buf[0x100] = "";
-                  if(debugging)
-                    snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
-                  maybeEndParagraph(ctx,buf);
-                  // make sure this wimp is in the paragraph, not before it.
-                  maybeStartParagraph(ctx,buf);
-                  ctx->endedNewline = false;
-                }
-              }
-          }
-
+					switch(lookup_wanted(e->name)) {
+					case W_UL:
+					case W_OL:
+					case W_P:
+					case W_DIV:
+					case W_TABLE:
+					case W_BLOCKQUOTE:
+						// no need to start (or have) a paragraph. This element is huge.
+						maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
+						if(maybeHish(e,ctx)) {
+							e = next;
+							continue;
+						}
+						break;
+					default:
+						//start a paragraph if this element is a wimp
+						//but only if the last text node ended on a newline.
+						//or at the beginning
+						//otherwise the last text node and this should be in the same
+						//paragraph
+						if(ctx->first || ctx->endedNewline) {
+							static char buf[0x100] = "";
+							if(debugging)
+								snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
+							maybeEndParagraph(ctx,buf);
+							// make sure this wimp is in the paragraph, not before it.
+							maybeStartParagraph(ctx,buf);
+							ctx->endedNewline = false;
+						}
+					};
+					break;
         default:
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
