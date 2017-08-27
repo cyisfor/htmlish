@@ -101,15 +101,16 @@ static void doByFile(xmlDoc* output, const char* name) {
 
 
 static void dump_to_fd(int dest, xmlDoc* src) {
+	static xmlCharEncodingHandler* encoding = NULL;
 	xmlOutputBuffer* out = xmlOutputBufferCreateFd(dest,encoding);
-	ensure_ne(out,NULL);
+	assert(out != NULL);
 	/* note, the encoding string passed to htmlDocContentDumpOutput is
 		 totally ignored, and should not be there, since xmlOutputBuffer
 		 handles encoding from this point.
 	*/
 	htmlDocContentDumpOutput(out,src,NULL);
 	// libxml
-	ensure_ge(xmlOutputBufferClose(out),0);
+	assert(xmlOutputBufferClose(out) > 0);
 }
 
 
