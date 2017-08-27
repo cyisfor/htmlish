@@ -100,6 +100,20 @@ static void doByFile(xmlDoc* output, const char* name) {
 }
 
 
+static void dump_to_fd(int dest, xmlDoc* src) {
+	xmlOutputBuffer* out = xmlOutputBufferCreateFd(dest,encoding);
+	ensure_ne(out,NULL);
+	/* note, the encoding string passed to htmlDocContentDumpOutput is
+		 totally ignored, and should not be there, since xmlOutputBuffer
+		 handles encoding from this point.
+	*/
+	htmlDocContentDumpOutput(out,src,NULL);
+	// libxml
+	ensure_ge(xmlOutputBufferClose(out),0);
+}
+
+
+
 int main(void) {
 
     if(getenv("printtemplate")) {
@@ -155,6 +169,6 @@ int main(void) {
 			xmlFreeNode(content);
 		}
 		html_when((xmlNode*)output); // manage <when> logic
-    htmlSaveFileFormat("-",output,"utf-8",1);
+    dump_to_fd(1,output);
     return 0;
 }
