@@ -264,11 +264,13 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
         }
 
         if(*(end + 1) == '\0') {
-            ctx->endedNewline = true;
+						if(end != start) 
+							xmlNodeAddContentLen(ctx->e, start, end-start);
             maybeEndParagraph(ctx,"final");
             // always end a paragraph on a newline ending, but not if there's no newline
             // since "blah <i>blah</i> blah" shouldn't be two paragraphs.
             // save the ended newline state to check the next e
+            ctx->endedNewline = true;
             return;
         }
         start = end+1;
