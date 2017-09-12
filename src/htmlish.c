@@ -217,15 +217,18 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
     while(isspace(*end)) {
 			if(*end == '\n') {
         // starts blank w/ newlines, so be sure to start a new paragraph.
-				if(end != start) 
+				if(end != start) {
 					xmlNodeAddContentLen(ctx->e, start, end-start);
+					start = end;
+				}
         maybeEndParagraph(ctx,"start");
 			}
 			++end;
 		}
-		if(end != start) 
+		if(end != start)  {
 			xmlNodeAddContentLen(ctx->e, start, end-start);
-		start = end;
+			start = end;
+		}
     bool first = true;
     for(;;) {
         end = strchrnul(start,'\n');
@@ -260,6 +263,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                     maybeStartParagraph(ctx,"middle");
                     first = false;
                     xmlNodeAddContentLen(ctx->e,start,end-start);
+										start = end;
                     maybeEndParagraph(ctx,"middle");
                     break;
                 }
@@ -268,8 +272,10 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
         }
 
         if(*(end + 1) == '\0') {
-						if(end != start) 
+						if(end != start) {
 							xmlNodeAddContentLen(ctx->e, start, end-start);
+							start = end;
+						}
             maybeEndParagraph(ctx,"final");
             // always end a paragraph on a newline ending, but not if there's no newline
             // since "blah <i>blah</i> blah" shouldn't be two paragraphs.
