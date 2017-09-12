@@ -225,6 +225,7 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
 		}
 		if(end != start) 
 			xmlNodeAddContentLen(ctx->e, start, end-start);
+		start = end;
     bool first = true;
     for(;;) {
         end = strchrnul(start,'\n');
@@ -236,7 +237,8 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                     if(!isspace(*c)) {
                         maybeStartParagraph(ctx,"beginning");
                         // no newlines between start and nul. Just leave it in the current paragraph!
-                        xmlNodeAddContentLen(ctx->e,start,c-start);
+												if(c != start) {
+													xmlNodeAddContentLen(ctx->e,start,c-start);
                         break;
                     }
                 }
