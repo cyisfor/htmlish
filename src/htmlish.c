@@ -214,11 +214,18 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
 
     xmlChar* start = text;
     xmlChar* end = start;
-    bool first = true;
-    if(*start == '\n') {
-        // starts blank, so be sure to start a new paragraph.
+    while(isspace(*end)) {
+			if(*end == '\n') {
+        // starts blank w/ newlines, so be sure to start a new paragraph.
+				if(end != start) 
+					xmlNodeAddContentLen(ctx->e, start, end-start);
         maybeEndParagraph(ctx,"start");
-    }
+			}
+			++end;
+		}
+		if(end != start) 
+			xmlNodeAddContentLen(ctx->e, start, end-start);
+    bool first = true;
     for(;;) {
         end = strchrnul(start,'\n');
         if(*end == 0) {
