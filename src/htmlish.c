@@ -163,10 +163,10 @@ static void maybeStartParagraph(struct ishctx* ctx, const char* where) {
             snprintf(buf,sizeof(buf),"start %s",where);
             newthingy(ctx,xmlNewComment(buf));
         }
-        xmlNodeAddContentLen(ctx->e,"\n",1);
+        //xmlNodeAddContentLen(ctx->e,"\n",1);
         newthingy(ctx,xmlNewNode(ctx->ns,"p"));
         //xmlSetProp(ctx->e,"where",where);
-        xmlNodeAddContentLen(ctx->e,"\n",1);
+        //xmlNodeAddContentLen(ctx->e,"\n",1);
         ctx->inParagraph = true;
     }
 }
