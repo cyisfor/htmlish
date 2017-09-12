@@ -217,10 +217,10 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
     while(isspace(*end)) {
 			if(*end == '\n') {
         // starts blank w/ newlines, so be sure to start a new paragraph.
-				if(end != start) {
-					xmlNodeAddContentLen(ctx->e, start, end-start);
-					start = end;
+				if(end != start + 1) {
+					xmlNodeAddContentLen(ctx->e, start, end-start-1);
 				}
+				start = end;
         maybeEndParagraph(ctx,"start");
 			}
 			++end;
