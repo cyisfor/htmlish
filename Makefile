@@ -62,6 +62,6 @@ push: setup ./git-tools/pushcreate
 
 clean:
 	git clean -ndx
-	@echo OK? (^C if not)
+	@echo 'OK? (^C if not)'
 	@read
 	git clean -fdx
