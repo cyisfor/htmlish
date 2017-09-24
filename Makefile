@@ -1,4 +1,4 @@
-all: test_parse test_copynode parse unparse libhtmlish.a
+all: setup test_parse test_copynode parse unparse libhtmlish.a
 
 XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g -O2 -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
