@@ -62,5 +62,6 @@ push: setup ./git-tools/pushcreate
 
 clean:
 	git clean -ndx
-	read
+	@echo OK?
+	@read
 	git clean -fdx
