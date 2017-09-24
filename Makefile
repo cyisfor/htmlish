@@ -37,7 +37,7 @@ libxml2/.libs/libxml2.a html_when/libhtmlwhen.a: descend
 descend:
 	$(MAKE) -C html_when libhtmlwhen.a
 
-.PHONY: 	html_when
+.PHONY: 	html_when clean
 
 o:
 	mkdir $@
@@ -59,3 +59,8 @@ push: setup ./git-tools/pushcreate
 	[[ -n "$(remote)" ]]
 	./git-tools/pushcreate "$(remote)"
 	$(MAKE) -C html_when push remote="$(remote)/html_when"
+
+clean:
+	git clean -ndx
+	read
+	git clean -fdx
