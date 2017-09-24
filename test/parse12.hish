@@ -1,0 +1,1 @@
+<a href="http://[::1]/some/url/">libxml2 is hard coded to break numeric IPv6 URLs by escaping the brackets in it. Must use custom libxml2 or it won’t work.
