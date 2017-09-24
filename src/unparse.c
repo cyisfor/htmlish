@@ -3,6 +3,9 @@
 #include <libxml/tree.h>
 #include <libxml/HTMLparser.h>
 
+#include <ctype.h> // isspace
+#include <string.h> // strncmp
+
 #include <stdio.h>
 
 static void printCollapseWhitespace(xmlChar* s) {
