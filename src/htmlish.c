@@ -480,7 +480,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 		.first = as_children
 	};
 
-	html_when((xmlNode*)doc); // XXX: coupling
+	//html_when((xmlNode*)doc); // XXX: coupling
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
