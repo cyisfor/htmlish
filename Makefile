@@ -1,7 +1,7 @@
 all: setup test_parse test_copynode parse unparse libhtmlish.a
 
 XMLVERSION:=include/libxml/xmlversion.h
-CFLAGS+=-g -O2 -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
+CFLAGS+=-g  -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
 LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/\s*-lxml2\s*//g')
 

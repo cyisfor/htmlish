@@ -206,7 +206,10 @@ void craft_style(struct chatctx* ctx) {
 		xmlNode* realhead = xmlNewNode(ctx->dest->ns, "head");
 		xmlAddPrevSibling(head,realhead);
 		head = realhead;
+		printf("ummmmm %s %s\n",head->name,head->next->name);
 	}
+	assert(lookup_wanted(head->name) == W_HEAD);
+	printf("ummmmm %s\n",head->name);
 	xmlAddChild(head, style);
 }
 
@@ -258,6 +261,7 @@ void found_chat(xmlDoc* doc, xmlNode* e) {
 static
 void doparse(xmlDoc* doc, xmlNode* top) {
 	if(!top) return;
+	xmlNode* next = top->next;
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
 			return found_chat(doc, top);
@@ -266,7 +270,7 @@ void doparse(xmlDoc* doc, xmlNode* top) {
 	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
 		return doparse(doc, top->children); // oops
 	}
-	return doparse(doc, top->next); // tail recursion on -O2
+	return doparse(doc, next); // tail recursion on -O2
 }
 
 void parse_chat(xmlDoc* top) {
