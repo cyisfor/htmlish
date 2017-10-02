@@ -20,6 +20,14 @@
 
 int main(int argc, char *argv[])
 {
+
+	LIBXML_TEST_VERSION;
+
+	void on_error(void * userData, xmlErrorPtr error) {
+		if(htmlish_handled_error(error)) return;
+	}
+	xmlSetStructuredErrorFunc(NULL,on_error);
+	
 	xmlDoc* template = htmlReadMemory(LITLEN(
 																			"<!DOCTYPE html>\n"
 																			"<html><body/></html>"),

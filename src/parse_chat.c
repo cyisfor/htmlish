@@ -228,10 +228,10 @@ void craft_style(struct chatctx* ctx) {
 		xmlNode* realhead = xmlNewNode(ctx->dest->ns, "head");
 		xmlAddPrevSibling(head,realhead);
 		head = realhead;
-		printf("ummmmm %s %s\n",head->name,head->next->name);
+		//printf("ummmmm %s %s\n",head->name,head->next->name);
 	}
 	assert(lookup_wanted(head->name) == W_HEAD);
-	printf("ummmmm %s\n",head->name);
+	//printf("ummmmm %s\n",head->name);
 	xmlAddChild(head, style);
 }
 
@@ -284,7 +284,6 @@ static
 void doparse(xmlDoc* doc, xmlNode* top) {
 	if(!top) return;
 	xmlNode* next = top->next;
-	printf("derp %s\n",top->name);
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
 			return found_chat(doc, top);

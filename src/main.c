@@ -124,18 +124,7 @@ int main(void) {
     LIBXML_TEST_VERSION;
 
 		void on_error(void * userData, xmlErrorPtr error) {
-			if(error->code == XML_HTML_UNKNOWN_TAG) {
-				const char* name = error->str1;
-				size_t nlen = strlen(name);
-				#define IS(a) (nlen == sizeof(a)-1) && (0 == memcmp(name,a,sizeof(a)-1))
-				if(IS("top") || IS("content") || IS("header") || IS("footer") || IS("intitle")
-					 || IS("when")) // XXX: coupling arrrrgh
-					// not errors, these get removed by template stuffs
-					return;
-			}
-			fprintf(stderr,"um %d %s %s\n",error->code, error->message,
-							error->level == XML_ERR_FATAL ? "fatal..." : "ok");
-			return;
+			if(htmlish_handled_error(error)) return;
 		}
 		xmlSetStructuredErrorFunc(NULL,on_error);
 
