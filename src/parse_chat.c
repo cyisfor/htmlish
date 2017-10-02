@@ -236,24 +236,20 @@ void craft_style(struct chatctx* ctx) {
 }
 
 static
-void found_chat(xmlDoc* doc, xmlNode* e) {
+void found_chat(struct chatctx* ctx, xmlDoc* doc, xmlNode* e) {
 	xmlNode* te = e->children;
 	assert(te->type == XML_TEXT_NODE);
 	xmlNode* table = xmlNewNode(e->ns,"table");
 	xmlSetProp(table, "class","chat");
-	struct chatctx ctx = {
-		.odd = true,
-		.names = NULL,
-		.nnames = 0,
-		.dest = table,
-		.doc = doc
-	};
+	ctx->dest = table;
+	ctx->odd = true;
+
 	xmlChar* start = te->content;
 	size_t left = strlen(start);
 	for(;;) {
 		xmlChar* nl = memchr(start,'\n',left);
 		if(nl == NULL) {
-			take_line(&ctx, start,left);
+			take_line(ctx, start,left);
 			break;
 		} else if(nl == start) {
 			// blank line
@@ -261,7 +257,7 @@ void found_chat(xmlDoc* doc, xmlNode* e) {
 			start = nl+1;
 		} else {
 			// not counting newline
-			take_line(&ctx, start,nl-start-1);
+			take_line(ctx, start,nl-start-1);
 			// we eat the newline though
 			left -= nl-start+1;
 			start = nl+1;
@@ -271,6 +267,33 @@ void found_chat(xmlDoc* doc, xmlNode* e) {
 	xmlUnlinkNode(e);
 	xmlFreeNode(e);
 
+}
+
+static
+void doparse(struct chatctx* ctx, xmlDoc* doc, xmlNode* top) {
+	if(!top) return;
+	xmlNode* next = top->next;
+	if(top->name) {
+		if(lookup_wanted(top->name) == W_CHAT) {
+			return found_chat(ctx, doc, top);
+		}
+		doparse(ctx, doc, top->children); // depth usually less than breadth
+	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
+		return doparse(ctx, doc, top->children); // oops
+	}
+	return doparse(ctx, doc, next); // tail recursion on -O2
+}
+
+void parse_chat(xmlDoc* top) {
+	struct chatctx ctx = {
+		.odd = true,
+		.names = NULL,
+		.nnames = 0,
+		.dest = NULL, // set to current table
+		.doc = doc
+	};
+	doparse(&ctx, top,top->children);
+	
 	/* now craft the stylesheet... because one style per name
 		 is better than one style per row */
 
@@ -278,23 +301,4 @@ void found_chat(xmlDoc* doc, xmlNode* e) {
 		craft_style(&ctx);
 		free(ctx.names);
 	}
-}
-
-static
-void doparse(xmlDoc* doc, xmlNode* top) {
-	if(!top) return;
-	xmlNode* next = top->next;
-	if(top->name) {
-		if(lookup_wanted(top->name) == W_CHAT) {
-			return found_chat(doc, top);
-		}
-		doparse(doc, top->children); // depth usually less than breadth
-	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
-		return doparse(doc, top->children); // oops
-	}
-	return doparse(doc, next); // tail recursion on -O2
-}
-
-void parse_chat(xmlDoc* top) {
-	return doparse(top,top->children);
 }
