@@ -1,6 +1,7 @@
 #define _GNU_SOURCE // memchr
 
 #include "libxmlfixes/wanted_tags.h"
+#include "libxmlfixes/libxmlfixes.h" // nextE
 
 #include "parse_chat.h"
 
@@ -222,7 +223,9 @@ void craft_style(struct chatctx* ctx) {
 	xmlNode* style = xmlNewNode(ctx->dest->ns, "style");
 	xmlAddChild(style,text);
 	// root -down-> DOCTYPE -next-> html -down-> head
-	xmlNode* head = ctx->doc->children->next->children;
+	// might be whitespace between html and head
+	xmlNode* head = nextE(ctx->doc->children->next->children);
+	if(head == NULL) abort();
 	if(lookup_wanted(head->name) != W_HEAD) {
 		// this document only has a <body> so far...
 		xmlNode* realhead = xmlNewNode(ctx->dest->ns, "head");
