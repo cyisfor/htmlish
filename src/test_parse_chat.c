@@ -1,6 +1,6 @@
 #define _GNU_SOURCE // memcmp
 
-#include "htmlish.h"
+#include "parse_chat.h"
 
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
@@ -27,18 +27,18 @@ int main(int argc, char *argv[])
 		"UTF-8",
 		0);
 
-	int i;
-	for(i=1;;++i) {
+	int i = 13;
+
 		char buf[0x100];
 		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
-		if(fd < 0) break;
+		assert(fd > 0);
 		printf("test %d...",i);
 		fflush(stdout);
-		xmlDoc* doc = xmlCopyDoc(template, 1);
+		xmlDoc* doc = readFunky(fd,LITLEN("bad file passed"));
+		parse_chat(doc);
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
-		htmlish(content,fd,true);
 		close(fd);
 		xmlChar* result = NULL;
 		int rlen = 0;
@@ -70,7 +70,7 @@ WRITE_ANYWAY:
 				getchar();
 				goto WRITE_ANYWAY;
 			}
-		}
+		
 		puts("passed.");
 	}
 			

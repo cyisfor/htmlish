@@ -1,4 +1,4 @@
-all: setup test_parse test_copynode parse unparse libhtmlish.a
+all: setup test_parse test_parse_chat test_copynode parse unparse libhtmlish.a
 
 XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g  -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
@@ -14,6 +14,10 @@ o/%.o: src/%.c libxml2/$(XMLVERSION) | o
 
 N=test_copynode
 test_copynode: $O 
+	$(LINK)
+
+N=test_parse_chat parse_chat
+test_parse_chat: $O
 	$(LINK)
 
 N=test_parse htmlish parse_chat

@@ -262,6 +262,7 @@ static
 void doparse(xmlDoc* doc, xmlNode* top) {
 	if(!top) return;
 	xmlNode* next = top->next;
+	printf("derp %s\n",top->name);
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
 			return found_chat(doc, top);
