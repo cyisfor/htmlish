@@ -1,4 +1,11 @@
 #include "htmlish.h"
+#include "html_when.h"
+#include "libxmlfixes/wanted_tags.h"
+#include <libxml/xmlerror.h>
+#include <string.h>
+
+
+#include <stdio.h>
 
 bool htmlish_handled_error(xmlErrorPtr error) {
 	if(html_when_handled_error(error)) return true;
