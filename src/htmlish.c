@@ -481,6 +481,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	};
 
 	html_when((xmlNode*)doc); // XXX: coupling
+	parse_chat((xmlNode*)doc); // <chat> tags
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body
