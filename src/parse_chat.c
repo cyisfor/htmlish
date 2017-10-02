@@ -104,7 +104,7 @@ void add_line(struct chatctx* ctx, xmlChar* name, S nlen, xmlChar* val, S vlen) 
 	snprintf(buf+1,0x100-1,"%x",id);
 	xmlSetProp(row,"class",buf);
 
-	xmlNode* namecell = xmlNewNode(ctx->dest->ns,"td");
+	xmlNode* namecell = xmlNewNode(ctx->dest->ns,"th");
 
 	xmlNodeAddContentLen(namecell,name,nlen);
 	xmlNode* vcell = xmlNewNode(ctx->dest->ns,"td");
@@ -178,34 +178,45 @@ void craft_style(struct chatctx* ctx) {
 	xmlNodeAddContentLen(text, LITLEN("\n"));
 	xmlNodeAddContentLen(text, LITLEN(".chat  { border-collapse: collapse; }\n"));
 
+	char idbuf[0x100];
+	char huebuf[0x100];
+	char buf[0x100];		
+			
+
+
 	for(id=0;id<ctx->nnames;++id) {
-		char buf[0x100];
+
+		int idlen = snprintf(idbuf,0x100,"%x",id));
 
 		xmlNodeAddContentLen(text, LITLEN(".n"));
-		xmlNodeAddContentLen(text, buf,
-												 snprintf(buf,0x100,"%x",id));
-		xmlNodeAddContentLen(text, LITLEN(" td {\n  color: hsl("));
+		xmlNodeAddContentLen(text, idbuf,idlen);
+												 
+		xmlNodeAddContentLen(text, LITLEN(" th {\n  color: hsl("));
 		srandom(id);
 
 		float hue = random() * 360.0 / RAND_MAX;
 		float sat = random() * 50.0 / RAND_MAX + 50.0; // higher saturation
 		float light = 40.0 + random() * 20.0 / RAND_MAX; // relatively dark
+
+		int huelen = snprintf(huebuf,0x100,"%f",hue);
 		
-		xmlNodeAddContentLen(text, buf,
-												 snprintf(buf,0x100,"%f",hue));
+		xmlNodeAddContentLen(text, huebuf,huelen);
+												 
 		xmlNodeAddContentLen(text, LITLEN(", "));
 		xmlNodeAddContentLen(text, buf,
 												 snprintf(buf,0x100,"%f",sat));
 		xmlNodeAddContentLen(text, LITLEN("%, "));
 		xmlNodeAddContentLen(text, buf,
 												 snprintf(buf,0x100,"%f",light));
-		xmlNodeAddContentLen(text, LITLEN("%);\n"));
+		xmlNodeAddContentLen(text, LITLEN("%);\n}\n"));
 
 		// now the background
-		xmlNodeAddContentLen(text, LITLEN("  background-color: hsl("));
-		xmlNodeAddContentLen(text, buf,
-												 snprintf(buf,0x100,"%f",hue));
-		xmlNodeAddContentLen(text, LITLEN("100%,96%);\n}\n")); // very light
+
+		xmlNodeAddContentLen(text, LITLEN(".n"));
+		xmlNodeAddContentLen(text, idbuf,idlen);
+		xmlNodeAddContentLen(text, LITLEN(" * {\n  background-color: hsl("));
+		xmlNodeAddContentLen(text, huebuf,huelen);
+		xmlNodeAddContentLen(text, LITLEN(", 100%,96%);\n}\n")); // very light
 	}
 	xmlNode* style = xmlNewNode(ctx->dest->ns, "style");
 	xmlAddChild(style,text);
