@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 		0);
 
 	int i;
-	for(i=13;;++i) {
+	for(i=1;;++i) {
 		char buf[0x100];
 		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
