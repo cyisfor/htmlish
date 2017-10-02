@@ -186,24 +186,27 @@ static void maybeEndParagraph(struct ishctx* ctx, const char* where) {
 
 static void processRoot(struct ishctx* ctx, xmlNode* root);
 
+void subhish(xmlNode* e, struct ishctx* ctx) {
+	//fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
+	xmlUnlinkNode(e);
+
+	xmlUnsetProp(e,"hish");
+	xmlNode* dangling = xmlNewNode(ctx->ns,"derp");
+	/* process the contents of this node like the root one */
+	struct ishctx subctx = {
+		.endedNewline = false,
+		.e = dangling,
+		.ns = ctx->ns,
+		.inParagraph = false,
+	};
+	processRoot(&subctx,e);
+	xmlNode* ne = moveToNew(e,ctx->e);
+	ne->children = dangling->next;
+	xmlUnlinkNode(dangling);
+}
+
 static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
   if(xmlHasProp(e,"hish")) {
-    //fprintf(stderr,"Hish weeeeee %s %s\n",e->name,e->properties->name);
-    xmlUnlinkNode(e);
-
-    xmlUnsetProp(e,"hish");
-    xmlNode* dangling = xmlNewNode(ctx->ns,"derp");
-    /* process the contents of this node like the root one */
-    struct ishctx subctx = {
-      .endedNewline = false,
-      .e = dangling,
-      .ns = ctx->ns,
-      .inParagraph = false,
-    };
-    processRoot(&subctx,e);
-    xmlNode* ne = moveToNew(e,ctx->e);
-    ne->children = dangling->next;
-    xmlUnlinkNode(dangling);
     return true;
   }
   return false;
@@ -310,6 +313,14 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
         case XML_ELEMENT_NODE: {
 					enum wanted_tags tag = lookup_wanted(e->name);
 					switch(tag) {
+					case W_CHAT: // yay, coupling!
+						maybeEndParagraph(ctx,"chat");
+						/* all <chat> is hish, so that parse_chat can work on paragraphs, not
+							 line-ish-things. No need to reinvent the line/tag/mixer/thingy.
+						*/
+						subhish(e, ctx);
+						e = next;
+						continue;
 					case W_UL:
 					case W_OL:
 					case W_P:

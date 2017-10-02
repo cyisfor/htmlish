@@ -18,22 +18,23 @@ typedef size_t S; // easier to type
 typedef unsigned short u16;
 
 // thanks, djb
+
 static
-u16
-makehash(xmlChar *str, S left)
-{
-    u16 hash = 5381;
-    int c;
+const u16 hashinit = 5381;
 
-		if(left == 0) return hash;
+static
+u16 hashchurn(xmlChar* name, S left, u16 hash) {
+	int c;
 
-    do {
-			--left; // backwards derp
-			c = str[left];
-			hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-		} while (left);
+	if(left == 0) return hash;
 
-    return hash;
+	do {
+		--left; // backwards derp
+		c = str[left];
+		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	} while (left);
+
+	return hash;
 }
 
 struct chatctx {
@@ -51,8 +52,10 @@ int compare_numps(const void* ap, const void* bp) {
 		*((u16*)bp);
 }
 
-u16 chat_intern(struct chatctx* ctx, xmlChar* name, S nlen) {
-	u16 hash = makehash(name,nlen);
+
+// takes a churned hash, provides a conveniently orderly number
+// also saves how many chatters, to setup style sheet for all of them
+u16 chat_intern(struct chatctx* ctx, u16 hash) {
 	if(ctx->nnames <= 10) {
 		int i;
 		for(i=0;i<ctx->nnames;++i) {
@@ -84,91 +87,6 @@ u16 chat_intern(struct chatctx* ctx, xmlChar* name, S nlen) {
 	return ctx->nnames-1;
 }
 
-static
-void add_line(struct chatctx* ctx, xmlChar* name, S nlen, xmlChar* val, S vlen) {
-	xmlNode* row = xmlNewNode(ctx->dest->ns,"tr");
-#if 0
-	if(ctx->odd) {
-		xmlSetProp(row,"class", "o");
-		ctx->odd = false;
-	} else {
-		// no need for an even class
-		ctx->odd = true;
-	}
-#endif
-	
-	u16 id = chat_intern(ctx, name,nlen); // may have collisions, but who cares
-
-	char buf[0x100] = "n";
-	// id should be low, since index into names, not the hash itself
-	snprintf(buf+1,0x100-1,"%x",id);
-	xmlSetProp(row,"class",buf);
-
-	xmlNode* namecell = xmlNewNode(ctx->dest->ns,"th");
-
-	xmlNodeAddContentLen(namecell,name,nlen);
-	xmlNode* vcell = xmlNewNode(ctx->dest->ns,"td");
-	xmlNodeAddContentLen(vcell,val,vlen);
-
-	xmlAddChild(row,namecell);
-	xmlAddChild(row,vcell);
-	xmlAddChild(ctx->dest,row);
-}
-
-static
-void take_line(struct chatctx* ctx, xmlChar* s, size_t n) {
-	// empty line:
-	if(n == 0) return;
-	if(n == 1 && s[0] == ':') {
-		// line with only colon?
-		return;
-	}
-	int i;
-	ssize_t colon = -1;
-	for(i=0;i<n;++i) {
-		if(!isspace(s[i])) {
-			if(s[i] == ':') {
-				colon = i;
-			}
-			break;
-		}
-	}
-	if(i == n) return;
-	int start = i; // eat space at beginning
-	// find colon:
-	if(colon == -1) {
-		for(i=start;i<n;++i) {
-			if(s[i] == ':') {
-				colon = i;
-				break;
-			}
-		}
-		if(i==n) return;
-		assert(colon != -1);
-	}
-
-	int endname = colon-1;
-	while(isspace(s[endname])) {
-		--endname;
-		assert(endname > start);
-	}
-	int startval = colon+1;
-	while(isspace(s[startval])) {
-		if(startval + 1 == n) {
-			// empty value?
-			add_line(ctx, s, endname-start+1, NULL, 0);
-			break;
-		}
-		++startval;
-	}
-	int endval = n;
-	assert(startval != endval);
-	while(isspace(s[endval])) {
-		--endval;
-		assert(endval > startval);
-	}
-	add_line(ctx, s, endname-start+1, s + startval, endval-startval+1);
-}
 
 /* XXX: since htmlish doesn't copy the old head into the new document,
 	 we have to write to the new head,
@@ -232,16 +150,67 @@ void craft_style(struct chatctx* ctx, xmlNode* head) {
 }
 
 static
+u16 churnonetag(xmlNode* e, u16 hash) {
+	if(e->name) {
+//		hash = hashchurn("<",1,hash);
+		hash = hashchurn(e->name,strlen(e->name),hash);
+		// attributes? pff
+//		hash = hashchurn(">",1,hash);
+	} else {
+		hash = hashchurn("text",4,hash);
+	}
+	if(e->content) {
+		hash = hashchurn(e->content,strlen(e->content),hash);
+	}
+	// end tags? pfffff
+	return hash;
+}
+
+static
+u16 churntag(xmlNode* top, u16 hash) {
+	hash = churnonetag(top,hash);
+	void recurse(xmlNode* e) {
+		while(e) {
+			hash = churnonetag(e, hash);
+			recurse(e->children);
+			e = e->next;
+		}
+	}
+	recurse(top->children);
+	return hash;
+}
+
+static
 void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
+	assert(middle);
 	xmlNode* row = xmlNewNode(middle->ns,"tr");
 	xmlNode* name = xmlNewNode(middle->ns,"th");
 	xmlNode* value = xmlNewNode(middle->ns,"td");
+	xmlAddChild(ctx->dest, row);
 	xmlAddChild(row,name);
 	xmlAddChild(row,value);
+	u16 hash = hashinit;
+	
 	xmlNode* cur = middle->first; // ->parent->children...
+	assert(cur);
 	while(cur != middle) {
 		xmlNode* next = cur->next;
 		xmlAddChild(name,cur);
+		hash = churntag(cur,hash);
+		cur = next;
+	}
+
+	u16 id = chat_intern(ctx, hash); // may have collisions, but who cares
+
+	char buf[0x100] = "n";
+	// id should be low, since index into names, not the hash itself
+	snprintf(buf+1,0x100-1,"%x",id);
+	xmlSetProp(row,"class",buf);
+	
+	cur = middle->next;
+	while(cur) {
+		xmlNode* next = cur->next;
+		xmlAddChild(value, cur);
 		cur = next;
 	}
 
@@ -259,6 +228,7 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
 			}
 			break;
 		}
+	}
 	// or maybe there's no (nonblank) plain text between <i>specialsnowflake</i> and :
 	int rightstart;
 	for(rightstart=colon+1;rightstart<length;++rightstart) {
@@ -300,8 +270,11 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
 			break;
 		}
 	}
-						
+
+	// we got the dangling text on either side of the colon, and all values thereof.
+	// and it's already added to the table. bam						
 }
+
 static
 void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 	/* after hishification,chat will now be a list of paragraphs, each of which have a name,
@@ -333,8 +306,10 @@ void process_chat(struct chatctx* ctx, xmlNode* chat) {
 		p = nextE(p);
 		if(!p) break;
 		process_paragraph(ctx, p);
+		// paragraph is cleaned out, but next ps should be there.
+		p = p->next;
 	}
-	// okay, done. replace it with the table.
+	// okay, done. replace the destroyed chat tag with our table.
 	xmlAddNextSibling(chat,table);
 	xmlUnlinkNode(chat);
 	xmlFreeNode(chat);
@@ -346,7 +321,7 @@ void doparse(struct chatctx* ctx, xmlNode* top) {
 	xmlNode* next = top->next;
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
-			found_chat(ctx, top);
+			process_chat(ctx, top);
 		} else {
 			doparse(ctx, top->children); // depth usually less than breadth
 		}
