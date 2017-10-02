@@ -5,6 +5,9 @@
 #include <ctype.h> // isspace
 #include <string.h> // memchr
 #include <stdbool.h>
+#include <assert.h>
+
+#define LITLEN(a) a,(sizeof(a)-1)
 
 typedef size_t S; // easier to type
 typedef unsigned short u16;
@@ -61,7 +64,7 @@ u16 chat_intern(struct chatctx* ctx, xmlChar* name, S nlen) {
 			return *result;
 		}
 	}
-	ctx->names = realloc(ctx->names,sizeof(*ctx->names)*(++nnames));
+	ctx->names = realloc(ctx->names,sizeof(*ctx->names)*(++ctx->nnames));
 	ctx->names[ctx->nnames-1] = hash;
 	if(ctx->nnames > 10) {
 		// productive to sort it
@@ -78,7 +81,7 @@ u16 chat_intern(struct chatctx* ctx, xmlChar* name, S nlen) {
 
 static
 void add_line(struct chatctx* ctx, xmlChar* name, S nlen, xmlChar* val, S vlen) {
-	xmlNode* row = xmlNewNode(dest->ns,"tr");
+	xmlNode* row = xmlNewNode(ctx->dest->ns,"tr");
 	if(ctx->odd) {
 		xmlSetProp(row,"class", "o");
 		ctx->odd = false;
@@ -87,9 +90,9 @@ void add_line(struct chatctx* ctx, xmlChar* name, S nlen, xmlChar* val, S vlen) 
 		ctx->odd = true;
 	}
 
-	u16 id = chat_intern(name,nlen); // may have collisions, but who cares
+	u16 id = chat_intern(ctx, name,nlen); // may have collisions, but who cares
 
-	xmlNode* namecell = xmlNewNode(dest->ns,"td");
+	xmlNode* namecell = xmlNewNode(ctx->dest->ns,"td");
 
 	char buf[0x100] = "n";
 	// id should be low, since index into names, not the hash itself
@@ -97,7 +100,7 @@ void add_line(struct chatctx* ctx, xmlChar* name, S nlen, xmlChar* val, S vlen) 
 	xmlSetProp(namecell,"class",buf);
 
 	xmlNodeAddContentLen(namecell,name,nlen);
-	xmlNode* vcell = xmlNewNode(dest->ns,"td");
+	xmlNode* vcell = xmlNewNode(ctx->dest->ns,"td");
 	xmlNodeAddContentLen(vcell,val,vlen);
 
 	xmlAddChild(row,namecell);
@@ -146,8 +149,7 @@ void take_line(struct chatctx* ctx, xmlChar* s, size_t n) {
 	while(isspace(s[startval])) {
 		if(startval + 1 == n) {
 			// empty value?
-			add_line(ctx, s, endname-start, NULL, 0, odd);
-			odd = !odd;
+			add_line(ctx, s, endname-start, NULL, 0);
 			break;
 		}
 		++startval;
@@ -211,11 +213,11 @@ void found_chat(xmlNode* e) {
 	for(;;) {
 		xmlChar* nl = memchr(start,'\n',left);
 		if(nl == NULL) {
-			take_line(&ctx, div, start,left);
+			take_line(&ctx, start,left);
 			break;
 		} else {
 			// not counting newline
-			take_line(&ctx, div, start,nl-start-1);
+			take_line(&ctx, start,nl-start-1);
 			// we eat the newline though
 			left -= nl-start;
 			start = nl+1;
