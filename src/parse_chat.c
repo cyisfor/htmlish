@@ -260,6 +260,8 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, S colon) {
 	assert(cur);
 	while(cur != middle) {
 		xmlNode* next = cur->next;
+		// interestingly, if you add a child without unlinking it, it results in corrupted memory.
+		xmlUnlinkNode(cur);
 		xmlAddChild(name,cur);
 		hash = churntag(cur,hash);
 		cur = next;
@@ -278,6 +280,7 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, S colon) {
 	cur = middle->next;
 	while(cur) {
 		xmlNode* next = cur->next;
+		xmlUnlinkNode(cur);
 		xmlAddChild(value, cur);
 		cur = next;
 	}
@@ -344,7 +347,7 @@ void doparse(struct chatctx* ctx, xmlNode* top) {
 }
 
 void parse_chat(xmlNode* top, xmlNode* ohead) {
-	return;
+
 	struct chatctx ctx = {
 		.odd = true,
 		.names = NULL,

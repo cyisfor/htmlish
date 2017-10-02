@@ -198,12 +198,12 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 		.e = dangling,
 		.ns = ctx->ns,
 		.inParagraph = false,
-		// first is false, because dangling is the "first" one.
+		// first is true, so everything ends up in dangling->children
 		.first = true
 	};
 	processRoot(&subctx,e);
 	xmlNode* ne = moveToNew(e,ctx->e);
-	ne->children = dangling->next;
+	ne->children = dangling->children;
 	xmlUnlinkNode(dangling);
 }
 
@@ -258,6 +258,8 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                     }
                 }
             }
+						// only found spaces between the last newline and the end!
+						ctx->endedNewline = true;
             return;
         } else {
 					// until we check further, let's assume there's nothing but space beyond

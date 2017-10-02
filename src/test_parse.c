@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
 
 	xmlDoc* template = htmlReadMemory(LITLEN(
 																			"<!DOCTYPE html>\n"
-																			"<html><body/></html>"),
+																			"<html><head><meta charset=utf-8/></head>\n"
+																			"<body/></html>"),
 		"about:blank",
 		"UTF-8",
 		0);
