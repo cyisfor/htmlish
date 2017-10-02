@@ -2,6 +2,7 @@
 #define _GNU_SOURCE
 
 #include "input.h"
+#include "parse_chat.h"
 
 #include "libxmlfixes/wanted_tags.h"
 #include "libxmlfixes/libxmlfixes.h"
@@ -481,7 +482,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	};
 
 	html_when((xmlNode*)doc); // XXX: coupling
-	parse_chat((xmlNode*)doc); // <chat> tags
+	parse_chat(doc); // <chat> tags
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body

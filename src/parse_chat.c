@@ -197,16 +197,21 @@ void craft_style(struct chatctx* ctx) {
 												 snprintf(buf,0x100,"%f",light));
 		xmlNodeAddContentLen(text, LITLEN("%); }\n"));
 	}
-	xmlNode* style = xmlNewNode(ctx->doc->ns, "style");
+	xmlNode* style = xmlNewNode(ctx->dest->ns, "style");
 	xmlAddChild(style,text);
-	// DOCTYPE -next-> html -down-> head
-	xmlNode* head = ctx->doc->next->children;
-	assert(lookup_wanted(head->name) == W_HEAD);
+	// root -down-> DOCTYPE -next-> html -down-> head
+	xmlNode* head = ctx->doc->children->next->children;
+	if(lookup_wanted(head->name) != W_HEAD) {
+		// this document only has a <body> so far...
+		xmlNode* realhead = xmlNewNode(ctx->dest->ns, "head");
+		xmlAddPrevSibling(head,realhead);
+		head = realhead;
+	}
 	xmlAddChild(head, style);
 }
 
 static
-void found_chat(xmlNode* doc, xmlNode* e) {
+void found_chat(xmlDoc* doc, xmlNode* e) {
 	xmlNode* te = e->children;
 	assert(te->type == XML_TEXT_NODE);
 	xmlNode* table = xmlNewNode(e->ns,"table");
