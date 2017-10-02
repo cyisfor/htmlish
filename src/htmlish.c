@@ -307,8 +307,9 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
                     ctx,
                     e->content);
             break;
-        case XML_ELEMENT_NODE:
-					switch(lookup_wanted(e->name)) {
+        case XML_ELEMENT_NODE: {
+					enum wanted_tags tag = lookup_wanted(e->name);
+					switch(tag) {
 					case W_UL:
 					case W_OL:
 					case W_P:
@@ -339,6 +340,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 						}
 					};
 					// fall through
+				}
         default:
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
         };
@@ -506,9 +508,10 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	doMetas(root,ohead);
 	doStyle(root,ohead);
 
+	parse_chat(doc); // <chat> tags
+
 	/* all stuff removed, process the whitespace! */
 	processRoot(&ctx,root);
-	parse_chat(oroot->doc); // <chat> tags
 }
 
 
