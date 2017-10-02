@@ -247,6 +247,9 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                 xmlChar* c;
                 for(c=start;c!=end;++c) {
                     if(!isspace(*c)) {
+											/* we found something that wasn't a space between this and
+												 the last newline */
+												ctx->endedNewline = false;
                         maybeStartParagraph(ctx,"beginning");
                         // no newlines between start and nul. Just leave it in the current paragraph!
 												if(end != start)
@@ -256,23 +259,25 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
                 }
             }
             return;
-        }
+        } else {
+					// until we check further, let's assume there's nothing but space beyond
+					ctx->endedNewline = true;
+				}
 
         if(start!=end) {
             // only start a paragraph once we're sure we got something to put in it.
             xmlChar* c;
             for(c=start;c!=end;++c) {
                 if(!isspace(*c)) {
-                    //only add a paragraph if it isn't ALL spaces
-                  if(debugging) {
-                    fprintf(stderr,"uhhh %d\n",end-start);
-                  }
-                    maybeStartParagraph(ctx,"middle");
-                    first = false;
-                    xmlNodeAddContentLen(ctx->e,start,end-start);
-										start = end;
-                    maybeEndParagraph(ctx,"middle");
-                    break;
+									// found something not a newline
+									ctx->endedNewline = false;
+									//only add a paragraph if it isn't ALL spaces
+									maybeStartParagraph(ctx,"middle");
+									first = false;
+									xmlNodeAddContentLen(ctx->e,start,end-start);
+									start = end;
+									maybeEndParagraph(ctx,"middle");
+									break;
                 }
             }
             // there's more to the text node we know, because end is at \n not \0
@@ -350,10 +355,10 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 							if(debugging)
 								snprintf(buf,0x100,"wimp tag {{%s}}",e->name);
 							maybeEndParagraph(ctx,buf);
-							// make sure this wimp is in the paragraph, not before it.
-							maybeStartParagraph(ctx,buf);
 							ctx->endedNewline = false;
 						}
+						// make sure this wimp is in a paragraph, not before it.
+						maybeStartParagraph(ctx,"wimp");
 					};
 					// fall through
 				}
