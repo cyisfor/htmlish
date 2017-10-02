@@ -190,9 +190,10 @@ void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* val
 			for(leftend=colon-1;leftend>leftstart;--leftend) {
 				assert(leftstart != leftend);
 				if(!isspace(content[leftend])) {
+					// remember, leftend is not a length, but the last position so length-1
 					xmlNodeAddContentLen(name,
 															 content+leftstart,
-															 leftend-leftstart);
+															 leftend-leftstart+1);
 					break;
 				}
 			}
@@ -211,8 +212,8 @@ void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* val
 					// no convenient method like with appending.
 
 					xmlNode* newt = xmlNewTextLen(content+rightstart,
-																				rightend-rightstart);
-					xmlNode* first = value->parent->children;
+																				rightend-rightstart+1);
+					xmlNode* first = value->children;
 					if(!first) {
 						// just set it as the newt?
 						xmlAddChild(value,newt);
