@@ -1,5 +1,9 @@
 #define _GNU_SOURCE // memchr
+
+#include "libxmlfixes/wanted_tags.h"
+
 #include "parse_chat.h"
+
 #include <stdlib.h> // qsort, bsearch, size_t
 #include <stdio.h> // snprintf... should use atoi but base 16...
 #include <ctype.h> // isspace
@@ -105,7 +109,7 @@ void add_line(struct chatctx* ctx, xmlChar* name, S nlen, xmlChar* val, S vlen) 
 
 	xmlAddChild(row,namecell);
 	xmlAddChild(row,vcell);
-	xmlAddChild(dest,row);
+	xmlAddChild(ctx->dest,row);
 }
 
 static
@@ -227,17 +231,19 @@ void found_chat(xmlNode* e) {
 	/* now craft the stylesheet... because one style per name
 		 is better than one style per row */
 
-	if(ctx->nnames > 0) {
-		craft_style(ctx);
+	if(ctx.nnames > 0) {
+		craft_style(&ctx);
 		free(ctx.names);
 	}
 }
 
 void parse_chat(xmlNode* top) {
 	if(!top) return;
-	if(lookup_wanted(top->name) == W_CHAT) {
-		return found_chat(top);
+	if(top->name) {
+		if(lookup_wanted(top->name) == W_CHAT) {
+			return found_chat(top);
+		}
+		parse_chat(top->children); // depth usually less than breadth
 	}
-	parse_chat(top->children); // depth usually less than breadth
 	return parse_chat(top->next); // tail recursion on -O2
 }
