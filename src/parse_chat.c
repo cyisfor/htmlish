@@ -39,6 +39,7 @@ struct chatctx {
 	u16* names;
 	int nnames;
 	xmlNode* dest;
+	xmlDoc* doc;
 	bool odd;
 };
 
@@ -171,7 +172,8 @@ static
 void craft_style(struct chatctx* ctx) {
 	short id;
 	// XXX: xmlNewTextLen?
-	xmlNode* text = xmlNewCDataBlock(ctx->dest->doc, NULL, 0);
+	xmlNode* text = xmlNewCDataBlock(ctx->doc, NULL, 0);
+	xmlNodeAddContentLen(text, LITLEN("\n"));
 	for(id=0;id<ctx->nnames;++id) {
 		char buf[0x100];
 
@@ -195,13 +197,16 @@ void craft_style(struct chatctx* ctx) {
 												 snprintf(buf,0x100,"%f",light));
 		xmlNodeAddContentLen(text, LITLEN("%); }\n"));
 	}
-	xmlNode* style = xmlNewNode(ctx->dest->ns, "style");
-	xmlAddPrevSibling(ctx->dest->children, style);
+	xmlNode* style = xmlNewNode(ctx->doc->ns, "style");
 	xmlAddChild(style,text);
+	// DOCTYPE -next-> html -down-> head
+	xmlNode* head = ctx->doc->next->children;
+	assert(lookup_wanted(head->name) == W_HEAD);
+	xmlAddChild(head, style);
 }
 
 static
-void found_chat(xmlNode* e) {
+void found_chat(xmlNode* doc, xmlNode* e) {
 	xmlNode* te = e->children;
 	assert(te->type == XML_TEXT_NODE);
 	xmlNode* table = xmlNewNode(e->ns,"table");
@@ -210,7 +215,8 @@ void found_chat(xmlNode* e) {
 		.odd = true,
 		.names = NULL,
 		.nnames = 0,
-		.dest = table
+		.dest = table,
+		.doc = doc
 	};
 	xmlChar* start = te->content;
 	size_t left = strlen(start);
@@ -221,12 +227,13 @@ void found_chat(xmlNode* e) {
 			break;
 		} else if(nl == start) {
 			// blank line
+			--left;
 			start = nl+1;
 		} else {
 			// not counting newline
 			take_line(&ctx, start,nl-start-1);
 			// we eat the newline though
-			left -= nl-start;
+			left -= nl-start+1;
 			start = nl+1;
 		}
 	}
@@ -243,15 +250,20 @@ void found_chat(xmlNode* e) {
 	}
 }
 
-void parse_chat(xmlNode* top) {
+static
+void doparse(xmlDoc* doc, xmlNode* top) {
 	if(!top) return;
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
-			return found_chat(top);
+			return found_chat(doc, top);
 		}
-		parse_chat(top->children); // depth usually less than breadth
+		doparse(doc, top->children); // depth usually less than breadth
 	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
-		return parse_chat(top->children); // oops
+		return doparse(doc, top->children); // oops
 	}
-	return parse_chat(top->next); // tail recursion on -O2
+	return doparse(doc, top->next); // tail recursion on -O2
+}
+
+void parse_chat(xmlDoc* top) {
+	return doparse(top,top->children);
 }
