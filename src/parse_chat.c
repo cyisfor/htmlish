@@ -153,7 +153,7 @@ void take_line(struct chatctx* ctx, xmlChar* s, size_t n) {
 	while(isspace(s[startval])) {
 		if(startval + 1 == n) {
 			// empty value?
-			add_line(ctx, s, endname-start, NULL, 0);
+			add_line(ctx, s, endname-start+1, NULL, 0);
 			break;
 		}
 		++startval;
@@ -164,7 +164,7 @@ void take_line(struct chatctx* ctx, xmlChar* s, size_t n) {
 		--endval;
 		assert(endval > startval);
 	}
-	add_line(ctx, s, endname-start, s + startval, endval-startval);
+	add_line(ctx, s, endname-start+1, s + startval, endval-startval+1);
 }
 
 static
@@ -219,6 +219,9 @@ void found_chat(xmlNode* e) {
 		if(nl == NULL) {
 			take_line(&ctx, start,left);
 			break;
+		} else if(nl == start) {
+			// blank line
+			start = nl+1;
 		} else {
 			// not counting newline
 			take_line(&ctx, start,nl-start-1);
@@ -227,6 +230,9 @@ void found_chat(xmlNode* e) {
 			start = nl+1;
 		}
 	}
+	xmlAddNextSibling(e,table);
+	xmlUnlinkNode(e);
+	xmlFreeNode(e);
 
 	/* now craft the stylesheet... because one style per name
 		 is better than one style per row */
@@ -244,6 +250,8 @@ void parse_chat(xmlNode* top) {
 			return found_chat(top);
 		}
 		parse_chat(top->children); // depth usually less than breadth
+	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
+		return parse_chat(top->children); // oops
 	}
 	return parse_chat(top->next); // tail recursion on -O2
 }
