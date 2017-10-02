@@ -198,6 +198,7 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 		.e = dangling,
 		.ns = ctx->ns,
 		.inParagraph = false,
+		.first = false
 	};
 	processRoot(&subctx,e);
 	xmlNode* ne = moveToNew(e,ctx->e);
@@ -523,7 +524,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	processRoot(&ctx,root);
 
 	// parses the htmlish OUTPUT
-	parse_chat(oroot,ohead); // <chat> tags
+	parse_chat(content,ohead); // <chat> tags
 }
 
 

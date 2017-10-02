@@ -187,8 +187,7 @@ void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* val
 	for(leftstart=0;leftstart<colon;++leftstart) {
 		if(!isspace(content[leftstart])) {
 			S leftend;
-			for(leftend=colon-1;leftend>leftstart;--leftend) {
-				assert(leftstart != leftend);
+			for(leftend=colon-1;leftend>=leftstart;--leftend) {
 				if(!isspace(content[leftend])) {
 					// remember, leftend is not a length, but the last position so length-1
 					xmlNodeAddContentLen(name,
@@ -205,8 +204,7 @@ void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* val
 	for(rightstart=colon+1;rightstart<length;++rightstart) {
 		if(!isspace(content[rightstart])) {
 			S rightend;
-			for(rightend=length-1;rightend>rightstart;--rightend) {
-				assert(rightstart != rightend);
+			for(rightend=length-1;rightend>=rightstart;--rightend) {
 				if(!isspace(content[rightend])) {
 					// add text before the first element... tricky
 					// no convenient method like with appending.
@@ -333,7 +331,7 @@ static
 void doparse(struct chatctx* ctx, xmlNode* top) {
 	if(!top) return;
 	xmlNode* next = top->next;
-	if(top->name) {
+	if(top->type == XML_ELEMENT_NODE) {
 		if(lookup_wanted(top->name) == W_CHAT) {
 			process_chat(ctx, top);
 		} else {
