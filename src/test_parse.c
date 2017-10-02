@@ -1,5 +1,6 @@
 #define _GNU_SOURCE // memcmp
 
+#include "libxmlfixes/libxmlfixes.h"
 #include "htmlish.h"
 
 #include <libxml/HTMLtree.h> // output
@@ -30,7 +31,7 @@ int main(int argc, char *argv[])
 
 	xmlDoc* template = htmlReadMemory(LITLEN(
 																			"<!DOCTYPE html>\n"
-																			"<html><head><meta charset=utf-8/></head>\n"
+																			"<html><head><meta charset=\"utf-8\"/></head>\n"
 																			"<body/></html>"),
 		"about:blank",
 		"UTF-8",
@@ -45,7 +46,8 @@ int main(int argc, char *argv[])
 		printf("test %d...",i);
 		fflush(stdout);
 		xmlDoc* doc = xmlCopyDoc(template, 1);
-		xmlNode* content = doc->children->next->children; // doctype -> html -> body
+		// doc -> doctype -> html -> head -> body 
+		xmlNode* content = nextE(doc->children->next->children->next); 
 		assert(content);
 		htmlish(content,fd,true);
 		close(fd);

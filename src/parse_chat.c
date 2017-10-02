@@ -203,46 +203,58 @@ void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* val
 	S rightstart;
 	for(rightstart=colon+1;rightstart<length;++rightstart) {
 		if(!isspace(content[rightstart])) {
-			S rightend;
-			for(rightend=length-1;rightend>=rightstart;--rightend) {
-				if(!isspace(content[rightend])) {
-					// add text before the first element... tricky
-					// no convenient method like with appending.
 
-					xmlNode* newt = xmlNewTextLen(content+rightstart,
-																				rightend-rightstart+1);
-					xmlNode* first = value->children;
-					if(!first) {
-						// just set it as the newt?
-						xmlAddChild(value,newt);
-					} else {
-						switch(first->type) {
-						case XML_TEXT_NODE:
-						case XML_CDATA_SECTION_NODE:
-							// add it to the new one, then toss the old one!
-							xmlNodeAddContent(newt, first->content);
-							// prev not next, so less setup for rearranging newt as the first
-							xmlAddPrevSibling(first, newt);
-							xmlUnlinkNode(first);
-							break;
-						case XML_ELEMENT_NODE:
-						case XML_COMMENT_NODE:
-							// add the text node as a previous sibling.
-							xmlAddPrevSibling(first, newt);
-							// do NOT unlink first, since we're still using it
-							break;
-						default:
-							error(23,0,"uh... why is there a weird node down here? %d",first->type);
-						};
+			S rightend;
+			xmlNode* first = value->children;
+			if(!first) {
+				/* do NOT strip on the end of the right side if further elements.
+					 That'll result in
+					 a: this is <i>italicized</i> 'k?
+					 =>
+					 <th>a</th><td>this is<i>italicized</i> 'k?
+					 which looks like:
+					 a this isitalicized 'k?
+				*/
+				for(rightend=length-1;rightend>=rightstart;--rightend) {
+					if(!isspace(content[rightend])) {
+						xmlNodeAddContentLen(value,
+																 content+rightstart,
+																 rightend-rightstart+1);
+						return;
 					}
-					break;
 				}
 			}
-			break;
+			// we have children, so don't strip end of the right
+			xmlNode* newt = xmlNewTextLen(content+rightstart,
+													 length-rightstart);
+
+			// add text before the first element... tricky
+			// no convenient method like with appending.
+			
+			switch(first->type) {
+			case XML_TEXT_NODE:
+			case XML_CDATA_SECTION_NODE:
+				// add it to the new one, then toss the old one!
+				xmlNodeAddContent(newt, first->content);
+				// prev not next, so less setup for rearranging newt as the first
+				xmlAddPrevSibling(first, newt);
+				xmlUnlinkNode(first);
+				break;
+			case XML_ELEMENT_NODE:
+			case XML_COMMENT_NODE:
+				// add the text node as a previous sibling.
+				xmlAddPrevSibling(first, newt);
+				// do NOT unlink first, since we're still using it
+				break;
+			default:
+				error(23,0,"uh... why is there a weird node down here? %d",first->type);
+			};
+			
+			return;
 		}
 	}
-	// we got the dangling text on either side of the colon, and all values thereof.
-	// and it's already added to the table. bam
+	// there was only space on the right side of the colon?
+	// makes perfect sense if "a:     <i>saying</i> stuff"
 }
 
 static
