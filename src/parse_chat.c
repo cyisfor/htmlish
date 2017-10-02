@@ -174,6 +174,9 @@ void craft_style(struct chatctx* ctx) {
 	// XXX: xmlNewTextLen?
 	xmlNode* text = xmlNewCDataBlock(ctx->doc, NULL, 0);
 	xmlNodeAddContentLen(text, LITLEN("\n"));
+	xmlNodeAddContentLen(text, LITLEN(".chat .o td { background-color: hsl(0,0%,85%); }\n"));
+	xmlNodeAddContentLen(text, LITLEN(".chat td { background-color: hsl(150,100%,85%); }\n\n"));
+
 	for(id=0;id<ctx->nnames;++id) {
 		char buf[0x100];
 
@@ -183,13 +186,13 @@ void craft_style(struct chatctx* ctx) {
 		xmlNodeAddContentLen(text, LITLEN(" { color: hsl("));
 		srandom(id);
 
-		float hue = random() / ((float)RAND_MAX);
-		float sat = random() * 100.0 / RAND_MAX; // any saturatin
-		float light = 5.0 + random() * 20.0 / RAND_MAX; // relatively dark
+		float hue = random() * 360.0 / RAND_MAX;
+		float sat = random() * 50.0 / RAND_MAX + 50.0; // higher saturation
+		float light = 40.0 + random() * 20.0 / RAND_MAX; // relatively dark
 		
 		xmlNodeAddContentLen(text, buf,
 												 snprintf(buf,0x100,"%f",hue));
-		xmlNodeAddContentLen(text, LITLEN("turn, "));
+		xmlNodeAddContentLen(text, LITLEN(", "));
 		xmlNodeAddContentLen(text, buf,
 												 snprintf(buf,0x100,"%f",sat));
 		xmlNodeAddContentLen(text, LITLEN("%, "));

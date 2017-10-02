@@ -1,7 +1,7 @@
 #define _GNU_SOURCE // memcmp
 
 #include "parse_chat.h"
-
+#include "libxmlfixes/libxmlfixes.h"
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
 #include <libxml/tree.h> // xmlCopyDoc
@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 		printf("test %d...",i);
 		fflush(stdout);
 		xmlDoc* doc = readFunky(fd,LITLEN("bad file passed"));
+		assert(doc);
 		parse_chat(doc);
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
