@@ -508,7 +508,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	doStyle(root,ohead);
 
 	/* all stuff removed, process the whitespace! */
-	processRoot(&ctx,root);
+	//processRoot(&ctx,root);
 }
 
 

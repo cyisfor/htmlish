@@ -177,6 +177,7 @@ void craft_style(struct chatctx* ctx) {
 	xmlNode* text = xmlNewCDataBlock(ctx->doc, NULL, 0);
 	xmlNodeAddContentLen(text, LITLEN("\n"));
 	xmlNodeAddContentLen(text, LITLEN(".chat  { border-collapse: collapse; }\n"));
+	xmlNodeAddContentLen(text, LITLEN(".chat th { padding-right: 1ex; text-align: right; }\n"));
 
 	char idbuf[0x100];
 	char huebuf[0x100];
@@ -186,17 +187,17 @@ void craft_style(struct chatctx* ctx) {
 
 	for(id=0;id<ctx->nnames;++id) {
 
-		int idlen = snprintf(idbuf,0x100,"%x",id));
+		int idlen = snprintf(idbuf,0x100,"%x",id);
 
 		xmlNodeAddContentLen(text, LITLEN(".n"));
 		xmlNodeAddContentLen(text, idbuf,idlen);
 												 
 		xmlNodeAddContentLen(text, LITLEN(" th {\n  color: hsl("));
-		srandom(id);
+		srandom(ctx->names[id]);
 
 		float hue = random() * 360.0 / RAND_MAX;
-		float sat = random() * 50.0 / RAND_MAX + 50.0; // higher saturation
-		float light = 40.0 + random() * 20.0 / RAND_MAX; // relatively dark
+		float sat = random() * 40.0 / RAND_MAX + 40.0; // higher saturation
+		float light = 30.0 + random() * 20.0 / RAND_MAX; // relatively dark
 
 		int huelen = snprintf(huebuf,0x100,"%f",hue);
 		
@@ -216,7 +217,7 @@ void craft_style(struct chatctx* ctx) {
 		xmlNodeAddContentLen(text, idbuf,idlen);
 		xmlNodeAddContentLen(text, LITLEN(" * {\n  background-color: hsl("));
 		xmlNodeAddContentLen(text, huebuf,huelen);
-		xmlNodeAddContentLen(text, LITLEN(", 100%,96%);\n}\n")); // very light
+		xmlNodeAddContentLen(text, LITLEN(", 100%,98%);\n}\n")); // very light
 	}
 	xmlNode* style = xmlNewNode(ctx->dest->ns, "style");
 	xmlAddChild(style,text);
