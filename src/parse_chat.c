@@ -290,7 +290,7 @@ void parse_chat(xmlDoc* top) {
 		.names = NULL,
 		.nnames = 0,
 		.dest = NULL, // set to current table
-		.doc = doc
+		.doc = top
 	};
 	doparse(&ctx, top,top->children);
 	
