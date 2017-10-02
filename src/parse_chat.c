@@ -344,7 +344,7 @@ void doparse(struct chatctx* ctx, xmlNode* top) {
 }
 
 void parse_chat(xmlNode* top, xmlNode* ohead) {
-
+	return;
 	struct chatctx ctx = {
 		.odd = true,
 		.names = NULL,

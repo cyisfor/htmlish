@@ -198,7 +198,8 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 		.e = dangling,
 		.ns = ctx->ns,
 		.inParagraph = false,
-		.first = false
+		// first is false, because dangling is the "first" one.
+		.first = true
 	};
 	processRoot(&subctx,e);
 	xmlNode* ne = moveToNew(e,ctx->e);
@@ -208,6 +209,7 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 
 static bool maybeHish(xmlNode* e, struct ishctx* ctx) {
   if(xmlHasProp(e,"hish")) {
+		subhish(e, ctx);
     return true;
   }
   return false;
@@ -222,7 +224,9 @@ static void processText(struct ishctx* ctx, xmlChar* text) {
     while(isspace(*end)) {
 			if(*end == '\n') {
         // starts blank w/ newlines, so be sure to start a new paragraph.
-				if(end != start + 1) {
+				// end can be == start "\n\t" or end can be 1+ since the first's whitespace
+				// " \n" or "\t\n" or etc
+				if(end > start + 1) {
 					xmlNodeAddContentLen(ctx->e, start, end-start-1);
 				}
 				start = end;
