@@ -16,7 +16,7 @@ N=test_copynode
 test_copynode: $O 
 	$(LINK)
 
-N=test_parse htmlish 
+N=test_parse htmlish parse_chat
 test_parse: $O
 	$(LINK)
 
@@ -24,11 +24,11 @@ N=unparse input
 unparse: $O 
 	$(LINK)
 
-N=main htmlish input 
+N=main htmlish parse_chat input 
 parse: $O 
 	$(LINK)
 
-N=htmlish input
+N=htmlish parse_chat input
 libhtmlish.a: $O
 	sh ./funnyar.sh $@ $O | ar -M
 

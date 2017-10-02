@@ -1,3 +1,11 @@
+#define _GNU_SOURCE // memchr
+#include "parse_chat.h"
+#include <stdlib.h> // qsort, bsearch, size_t
+#include <stdio.h> // snprintf... should use atoi but base 16...
+#include <ctype.h> // isspace
+#include <string.h> // memchr
+#include <stdbool.h>
+
 typedef size_t S; // easier to type
 typedef unsigned short u16;
 
@@ -48,7 +56,7 @@ u16 chat_intern(struct chatctx* ctx, xmlChar* name, S nlen) {
 		// productive to binary search
 		u16* result = bsearch(&hash, ctx->names,
 																		ctx->nnames, sizeof(*ctx->names),
-																		compare_uls);
+																		compare_numps);
 		if(result != NULL) {
 			return *result;
 		}
@@ -57,11 +65,11 @@ u16 chat_intern(struct chatctx* ctx, xmlChar* name, S nlen) {
 	ctx->names[ctx->nnames-1] = hash;
 	if(ctx->nnames > 10) {
 		// productive to sort it
-		qsort(ctx->names, ctx->nnames, sizeof(*ctx->names), compare_uls);
+		qsort(ctx->names, ctx->nnames, sizeof(*ctx->names), compare_numps);
 		// now where did it go...
 		unsigned long* result = bsearch(&hash, ctx->names,
 																		ctx->nnames, sizeof(*ctx->names),
-																		compare_uls);
+																		compare_numps);
 		assert(result != NULL);
 		return *result;
 	}
