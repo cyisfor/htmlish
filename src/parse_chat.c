@@ -40,7 +40,6 @@ struct chatctx {
 	u16* names;
 	int nnames;
 	xmlNode* dest;
-	xmlDoc* doc;
 	bool odd;
 };
 
@@ -171,11 +170,17 @@ void take_line(struct chatctx* ctx, xmlChar* s, size_t n) {
 	add_line(ctx, s, endname-start+1, s + startval, endval-startval+1);
 }
 
+/* XXX: since htmlish doesn't copy the old head into the new document,
+	 we have to write to the new head,
+	 yet otherwise we're modifying the input document in-place...
+*/
+
 static
-void craft_style(struct chatctx* ctx) {
+void craft_style(struct chatctx* ctx, xmlNode* head) {
+	// do NOT use ctx->dest because it's in the input document...
 	short id;
 	// XXX: xmlNewTextLen?
-	xmlNode* text = xmlNewCDataBlock(ctx->doc, NULL, 0);
+	xmlNode* text = xmlNewCDataBlock(head->doc, NULL, 0);
 	xmlNodeAddContentLen(text, LITLEN("\n"));
 	xmlNodeAddContentLen(text, LITLEN(".chat  { border-collapse: collapse; }\n"));
 	xmlNodeAddContentLen(text, LITLEN(".chat th { padding-right: 1ex; text-align: right; }\n"));
@@ -220,27 +225,14 @@ void craft_style(struct chatctx* ctx) {
 		xmlNodeAddContentLen(text, huebuf,huelen);
 		xmlNodeAddContentLen(text, LITLEN(", 100%,98%);\n}\n")); // very light
 	}
-	xmlNode* style = xmlNewNode(ctx->dest->ns, "style");
+	xmlNode* style = xmlNewNode(head->ns, "style");
 	xmlAddChild(style,text);
-	// root -down-> DOCTYPE -next-> html -down-> head
-	xmlNode* head = ctx->doc->children->next->children;
-	// might be whitespace between html and head
-	head = nextE(head);
-	if(head == NULL) abort();
-	if(lookup_wanted(head->name) != W_HEAD) {
-		// this document only has a <body> so far...
-		xmlNode* realhead = xmlNewNode(ctx->dest->ns, "head");
-		xmlAddPrevSibling(head,realhead);
-		head = realhead;
-		//printf("ummmmm %s %s\n",head->name,head->next->name);
-	}
-	assert(lookup_wanted(head->name) == W_HEAD);
 	//printf("ummmmm %s\n",head->name);
 	xmlAddChild(head, style);
 }
 
 static
-void found_chat(struct chatctx* ctx, xmlDoc* doc, xmlNode* e) {
+void found_chat(struct chatctx* ctx, xmlNode* e) {
 	xmlNode* te = e->children;
 	assert(te->type == XML_TEXT_NODE);
 	xmlNode* table = xmlNewNode(e->ns,"table");
@@ -274,35 +266,35 @@ void found_chat(struct chatctx* ctx, xmlDoc* doc, xmlNode* e) {
 }
 
 static
-void doparse(struct chatctx* ctx, xmlDoc* doc, xmlNode* top) {
+void doparse(struct chatctx* ctx, xmlNode* top) {
 	if(!top) return;
 	xmlNode* next = top->next;
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
-			return found_chat(ctx, doc, top);
+			return found_chat(ctx, top);
 		}
-		doparse(ctx, doc, top->children); // depth usually less than breadth
+		doparse(ctx, top->children); // depth usually less than breadth
 	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
-		return doparse(ctx, doc, top->children); // oops
+		return doparse(ctx, top->children); // oops
 	}
-	return doparse(ctx, doc, next); // tail recursion on -O2
+	return doparse(ctx, next); // tail recursion on -O2
 }
 
-void parse_chat(xmlDoc* top) {
+void parse_chat(xmlNode* top, xmlNode* ohead) {
+	
 	struct chatctx ctx = {
 		.odd = true,
 		.names = NULL,
 		.nnames = 0,
 		.dest = NULL, // set to current table
-		.doc = top
 	};
-	doparse(&ctx, top,top->children);
+	doparse(&ctx, top->children);
 	
 	/* now craft the stylesheet... because one style per name
 		 is better than one style per row */
 
 	if(ctx.nnames > 0) {
-		craft_style(&ctx);
+		craft_style(&ctx, ohead);
 		free(ctx.names);
 	}
 }

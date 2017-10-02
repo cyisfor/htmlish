@@ -508,7 +508,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	doMetas(root,ohead);
 	doStyle(root,ohead);
 
-	parse_chat(doc); // <chat> tags
+	parse_chat(doc->children,ohead); // <chat> tags
 
 	/* all stuff removed, process the whitespace! */
 	processRoot(&ctx,root);

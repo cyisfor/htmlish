@@ -1,2 +1,2 @@
 #include <libxml/tree.h>
-void parse_chat(xmlDoc* top);
+void parse_chat(xmlNode* top, xmlNode* ohead);
