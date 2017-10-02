@@ -23,7 +23,7 @@ static
 const u16 hashinit = 5381;
 
 static
-u16 hashchurn(xmlChar* name, S left, u16 hash) {
+u16 hashchurn(const xmlChar* str, S left, u16 hash) {
 	int c;
 
 	if(left == 0) return hash;
@@ -105,8 +105,8 @@ void craft_style(struct chatctx* ctx, xmlNode* head) {
 
 	char idbuf[0x100];
 	char huebuf[0x100];
-	char buf[0x100];		
-			
+	char buf[0x100];
+
 
 
 	for(id=0;id<ctx->nnames;++id) {
@@ -115,7 +115,7 @@ void craft_style(struct chatctx* ctx, xmlNode* head) {
 
 		xmlNodeAddContentLen(text, LITLEN(".n"));
 		xmlNodeAddContentLen(text, idbuf,idlen);
-												 
+
 		xmlNodeAddContentLen(text, LITLEN(" th {\n  color: hsl("));
 		srandom(ctx->names[id]);
 
@@ -124,9 +124,9 @@ void craft_style(struct chatctx* ctx, xmlNode* head) {
 		float light = 30.0 + random() * 20.0 / RAND_MAX; // relatively dark
 
 		int huelen = snprintf(huebuf,0x100,"%f",hue);
-		
+
 		xmlNodeAddContentLen(text, huebuf,huelen);
-												 
+
 		xmlNodeAddContentLen(text, LITLEN(", "));
 		xmlNodeAddContentLen(text, buf,
 												 snprintf(buf,0x100,"%f",sat));
@@ -181,44 +181,13 @@ u16 churntag(xmlNode* top, u16 hash) {
 }
 
 static
-void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
-	assert(middle);
-	xmlNode* row = xmlNewNode(middle->ns,"tr");
-	xmlNode* name = xmlNewNode(middle->ns,"th");
-	xmlNode* value = xmlNewNode(middle->ns,"td");
-	xmlAddChild(ctx->dest, row);
-	xmlAddChild(row,name);
-	xmlAddChild(row,value);
-	u16 hash = hashinit;
-	
-	xmlNode* cur = middle->first; // ->parent->children...
-	assert(cur);
-	while(cur != middle) {
-		xmlNode* next = cur->next;
-		xmlAddChild(name,cur);
-		hash = churntag(cur,hash);
-		cur = next;
-	}
-
-	u16 id = chat_intern(ctx, hash); // may have collisions, but who cares
-
-	char buf[0x100] = "n";
-	// id should be low, since index into names, not the hash itself
-	snprintf(buf+1,0x100-1,"%x",id);
-	xmlSetProp(row,"class",buf);
-	
-	cur = middle->next;
-	while(cur) {
-		xmlNode* next = cur->next;
-		xmlAddChild(value, cur);
-		cur = next;
-	}
-
-	int leftstart;
+void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* value) {
+	S leftstart;
 	for(leftstart=0;leftstart<colon;++leftstart) {
 		if(!isspace(content[leftstart])) {
-			int leftend;
-			for(leftend=colon;leftend>leftstart;--leftend) {
+			S leftend;
+			for(leftend=colon-1;leftend>leftstart;--leftend) {
+				assert(leftstart != leftend);
 				if(!isspace(content[leftend])) {
 					xmlNodeAddContentLen(name,
 															 content+leftstart,
@@ -229,16 +198,17 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
 			break;
 		}
 	}
-	// or maybe there's no (nonblank) plain text between <i>specialsnowflake</i> and :
-	int rightstart;
+	// that's the left side of the colon...
+	S rightstart;
 	for(rightstart=colon+1;rightstart<length;++rightstart) {
 		if(!isspace(content[rightstart])) {
-			int rightend;
-			for(rightend=length-1;rightend>colon;--rightend) {
+			S rightend;
+			for(rightend=length-1;rightend>rightstart;--rightend) {
+				assert(rightstart != rightend);
 				if(!isspace(content[rightend])) {
 					// add text before the first element... tricky
 					// no convenient method like with appending.
-					
+
 					xmlNode* newt = xmlNewTextLen(content+rightstart,
 																				rightend-rightstart);
 					xmlNode* first = value->first;
@@ -265,14 +235,54 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
 							error(23,0,"uh... why is there a weird node down here? %d",first->type);
 						};
 					}
+					break;
 				}
 			}
 			break;
 		}
 	}
-
 	// we got the dangling text on either side of the colon, and all values thereof.
-	// and it's already added to the table. bam						
+	// and it's already added to the table. bam
+}
+
+static
+void divvy_siblings(struct chatctx* ctx, xmlNode* middle, S colon) {
+	assert(middle);
+	xmlNode* row = xmlNewNode(middle->ns,"tr");
+	xmlNode* name = xmlNewNode(middle->ns,"th");
+	xmlNode* value = xmlNewNode(middle->ns,"td");
+	xmlAddChild(ctx->dest, row);
+	xmlAddChild(row,name);
+	xmlAddChild(row,value);
+	u16 hash = hashinit;
+
+	xmlNode* cur = middle->parent->children; // ->first...
+	assert(cur);
+	while(cur != middle) {
+		xmlNode* next = cur->next;
+		xmlAddChild(name,cur);
+		hash = churntag(cur,hash);
+		cur = next;
+	}
+
+	u16 id = chat_intern(ctx, hash); // may have collisions, but who cares
+
+	char buf[0x100] = "n";
+	// id should be low, since index into names, not the hash itself
+	snprintf(buf+1,0x100-1,"%x",id);
+	xmlSetProp(row,"class",buf);
+
+	cur = middle->next;
+	while(cur) {
+		xmlNode* next = cur->next;
+		xmlAddChild(value, cur);
+		cur = next;
+	}
+
+	xmlChar* content = middle->content;
+	if(content) {
+		divvy_text(content, colon, strlen(content), name, value);
+	}
 }
 
 static
@@ -285,7 +295,7 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 			xmlChar* colon = strchr(middle->content,':');
 			if(colon != NULL) {
 				// divide this text node in half... before is the name, after is the value.
-				return divvy_siblings(ctx, middle, colon);
+				return divvy_siblings(ctx, middle, colon - middle->content);
 			}
 		}
 		colon = colon->next;
@@ -332,7 +342,7 @@ void doparse(struct chatctx* ctx, xmlNode* top) {
 }
 
 void parse_chat(xmlNode* top, xmlNode* ohead) {
-	
+
 	struct chatctx ctx = {
 		.odd = true,
 		.names = NULL,
@@ -340,7 +350,7 @@ void parse_chat(xmlNode* top, xmlNode* ohead) {
 		.dest = NULL, // set to current table
 	};
 	doparse(&ctx, top->children);
-	
+
 	/* now craft the stylesheet... because one style per name
 		 is better than one style per row */
 
