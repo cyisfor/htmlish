@@ -232,37 +232,112 @@ void craft_style(struct chatctx* ctx, xmlNode* head) {
 }
 
 static
-void found_chat(struct chatctx* ctx, xmlNode* e) {
-	xmlNode* te = e->children;
-	assert(te->type == XML_TEXT_NODE);
+void divvy_siblings(struct chatctx* ctx, xmlNode* middle, int colon) {
+	xmlNode* row = xmlNewNode(middle->ns,"tr");
+	xmlNode* name = xmlNewNode(middle->ns,"th");
+	xmlNode* value = xmlNewNode(middle->ns,"td");
+	xmlAddChild(row,name);
+	xmlAddChild(row,value);
+	xmlNode* cur = middle->first; // ->parent->children...
+	while(cur != middle) {
+		xmlNode* next = cur->next;
+		xmlAddChild(name,cur);
+		cur = next;
+	}
+
+	int leftstart;
+	for(leftstart=0;leftstart<colon;++leftstart) {
+		if(!isspace(content[leftstart])) {
+			int leftend;
+			for(leftend=colon;leftend>leftstart;--leftend) {
+				if(!isspace(content[leftend])) {
+					xmlNodeAddContentLen(name,
+															 content+leftstart,
+															 leftend-leftstart);
+					break;
+				}
+			}
+			break;
+		}
+	// or maybe there's no (nonblank) plain text between <i>specialsnowflake</i> and :
+	int rightstart;
+	for(rightstart=colon+1;rightstart<length;++rightstart) {
+		if(!isspace(content[rightstart])) {
+			int rightend;
+			for(rightend=length-1;rightend>colon;--rightend) {
+				if(!isspace(content[rightend])) {
+					// add text before the first element... tricky
+					// no convenient method like with appending.
+					
+					xmlNode* newt = xmlNewTextLen(content+rightstart,
+																				rightend-rightstart);
+					xmlNode* first = value->first;
+					if(!first) {
+						// just set it as the newt?
+						xmlAddChild(value,newt);
+					} else {
+						switch(first->type) {
+						case XML_TEXT_NODE:
+						case XML_CDATA_SECTION_NODE:
+							// add it to the new one, then toss the old one!
+							xmlNodeAddContent(newt, first->content);
+							// prev not next, so less setup for rearranging newt as the first
+							xmlAddPrevSibling(first, newt);
+							xmlUnlinkNode(first);
+							break;
+						case XML_ELEMENT_NODE:
+						case XML_COMMENT_NODE:
+							// add the text node as a previous sibling.
+							xmlAddPrevSibling(first, newt);
+							// do NOT unlink first, since we're still using it
+							break;
+						default:
+							error(23,0,"uh... why is there a weird node down here? %d",first->type);
+						};
+					}
+				}
+			}
+			break;
+		}
+	}
+						
+}
+static
+void process_paragraph(struct chatctx* ctx, xmlNode* e) {
+	/* after hishification,chat will now be a list of paragraphs, each of which have a name,
+		 then text containing :, then a value. */
+	xmlNode* middle = e->children;
+	for(;;) {
+		if(middle->type == XML_TEXT_NODE) {
+			xmlChar* colon = strchr(middle->content,':');
+			if(colon != NULL) {
+				// divide this text node in half... before is the name, after is the value.
+				return divvy_siblings(ctx, middle, colon);
+			}
+		}
+		colon = colon->next;
+		if(!colon) return;
+	}
+}
+
+static
+void process_chat(struct chatctx* ctx, xmlNode* chat) {
+	// one table per chat block
 	xmlNode* table = xmlNewNode(e->ns,"table");
 	xmlSetProp(table, "class","chat");
 	ctx->dest = table;
 	ctx->odd = true;
 
-	xmlChar* start = te->content;
-	size_t left = strlen(start);
-	for(;;) {
-		xmlChar* nl = memchr(start,'\n',left);
-		if(nl == NULL) {
-			take_line(ctx, start,left);
-			break;
-		} else if(nl == start) {
-			// blank line
-			--left;
-			start = nl+1;
-		} else {
-			// not counting newline
-			take_line(ctx, start,nl-start-1);
-			// we eat the newline though
-			left -= nl-start+1;
-			start = nl+1;
-		}
+	xmlNode* p = chat->children;
+	while(p) {
+		p = nextE(p);
+		if(!p) break;
+		process_paragraph(ctx, p);
 	}
-	xmlAddNextSibling(e,table);
-	xmlUnlinkNode(e);
-	xmlFreeNode(e);
-
+	// okay, done. replace it with the table.
+	xmlAddNextSibling(chat,table);
+	xmlUnlinkNode(chat);
+	xmlFreeNode(chat);
 }
 
 static
