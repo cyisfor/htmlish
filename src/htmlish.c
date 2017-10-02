@@ -519,10 +519,11 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	doMetas(root,ohead);
 	doStyle(root,ohead);
 
-	parse_chat(root,ohead); // <chat> tags
-
 	/* all stuff removed, process the whitespace! */
 	processRoot(&ctx,root);
+
+	// parses the htmlish OUTPUT
+	parse_chat(oroot,ohead); // <chat> tags
 }
 
 

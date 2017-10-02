@@ -11,6 +11,7 @@
 #include <string.h> // memchr
 #include <stdbool.h>
 #include <assert.h>
+#include <error.h>
 
 #define LITLEN(a) a,(sizeof(a)-1)
 
@@ -211,7 +212,7 @@ void divvy_text(xmlChar* content, S colon, S length, xmlNode* name, xmlNode* val
 
 					xmlNode* newt = xmlNewTextLen(content+rightstart,
 																				rightend-rightstart);
-					xmlNode* first = value->first;
+					xmlNode* first = value->parent->children;
 					if(!first) {
 						// just set it as the newt?
 						xmlAddChild(value,newt);
@@ -265,6 +266,9 @@ void divvy_siblings(struct chatctx* ctx, xmlNode* middle, S colon) {
 		cur = next;
 	}
 
+	// don't forget the text inside middle
+	hash = hashchurn(middle->content, colon, hash);
+	
 	u16 id = chat_intern(ctx, hash); // may have collisions, but who cares
 
 	char buf[0x100] = "n";
@@ -290,7 +294,7 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 	/* after hishification,chat will now be a list of paragraphs, each of which have a name,
 		 then text containing :, then a value. */
 	xmlNode* middle = e->children;
-	for(;;) {
+	while(middle) {
 		if(middle->type == XML_TEXT_NODE) {
 			xmlChar* colon = strchr(middle->content,':');
 			if(colon != NULL) {
@@ -298,15 +302,14 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 				return divvy_siblings(ctx, middle, colon - middle->content);
 			}
 		}
-		colon = colon->next;
-		if(!colon) return;
+		middle = middle->next;
 	}
 }
 
 static
 void process_chat(struct chatctx* ctx, xmlNode* chat) {
 	// one table per chat block
-	xmlNode* table = xmlNewNode(e->ns,"table");
+	xmlNode* table = xmlNewNode(chat->ns,"table");
 	xmlSetProp(table, "class","chat");
 	ctx->dest = table;
 	ctx->odd = true;
