@@ -271,9 +271,10 @@ void doparse(struct chatctx* ctx, xmlNode* top) {
 	xmlNode* next = top->next;
 	if(top->name) {
 		if(lookup_wanted(top->name) == W_CHAT) {
-			return found_chat(ctx, top);
+			found_chat(ctx, top);
+		} else {
+			doparse(ctx, top->children); // depth usually less than breadth
 		}
-		doparse(ctx, top->children); // depth usually less than breadth
 	} else if(top->type == XML_HTML_DOCUMENT_NODE) {
 		return doparse(ctx, top->children); // oops
 	}
