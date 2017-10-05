@@ -12,10 +12,11 @@
 bool htmlish_handled_error(xmlErrorPtr error) {
 	if(html_when_handled_error(error)) return true;
 	switch(error->code) {
-	case XML_ERR_ERROR:
+	case XML_ERR_ENTITYREF_SEMICOL_MISSING:
 		if(0==strncmp(error->message,LITLEN("htmlParseEntityRef: expecting ';'"))) {
 			// they want us to replace every & with &AMP; in attributes that are
 			// ALREADY DELINEATED BY QUOTATION MARKS
+			// no way to tell if we're parsing an attribute or not, so just ignore all errors :(
 			return true;
 		}
 		break;
