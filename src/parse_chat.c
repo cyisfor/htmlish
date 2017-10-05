@@ -101,8 +101,11 @@ void craft_style(struct chatctx* ctx, xmlNode* head) {
 	// XXX: xmlNewTextLen?
 	xmlNode* text = xmlNewCDataBlock(head->doc, NULL, 0);
 	xmlNodeAddContentLen(text, LITLEN("\n"));
-	xmlNodeAddContentLen(text, LITLEN(".chat  { border-collapse: collapse; }\n"));
-	xmlNodeAddContentLen(text, LITLEN(".chat th { padding-right: 1ex; text-align: right; }\n"));
+	/*
+		these should go in a global stylesheet.
+		xmlNodeAddContentLen(text, LITLEN(".chat  { border-collapse: collapse; }\n"));
+		xmlNodeAddContentLen(text, LITLEN(".chat th { padding-right: 1ex; text-align: right; }\n"));
+	*/
 
 	char idbuf[0x100];
 	char huebuf[0x100];
