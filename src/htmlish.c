@@ -407,7 +407,19 @@ static void removeStylesheets(xmlNode* target, void* ctx) {
 void doStyle(xmlNode* root, xmlNode* head) {
   const char* envstyle = getenv("style");
   if(envstyle) {
-    createStyle(head,envstyle);
+		const char* semi = strchr(envstyle,';');
+		if(semi == NULL) {
+			return createStyle(head,envstyle);
+		}
+		do {
+			char buf[0x100];
+			assert(semi - envstyle < 0x100);
+			memcpy(buf,envstyle,semi-envstyle);
+			buf[semi-envstyle] = '\0';
+			createStyle(head,buf);
+			envstyle = semi;
+			semi = strchr(envstyle,';');
+		} while(semi != NULL);
   }
 
   foreachNode(root,"stylesheet",removeStylesheets,head);
