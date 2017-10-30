@@ -338,6 +338,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 					case W_P:
 					case W_DIV:
 					case W_TABLE:
+					case W_HR:
 					case W_BLOCKQUOTE:
 						// no need to start (or have) a paragraph. This element is huge.
 						maybeEndParagraph(ctx,"block"); //XXX: let block elements stay inside a paragraph if on same line?
@@ -418,7 +419,7 @@ void doStyle(xmlNode* root, xmlNode* head) {
 			memcpy(buf,envstyle,semi-envstyle);
 			buf[semi-envstyle] = '\0';
 			createStyle(head,buf);
-			envstyle = semi;
+			envstyle = semi+1;
 			if(done) break;
 			semi = strchrnul(envstyle,';');
 			if(*semi == '\0') done = true;
