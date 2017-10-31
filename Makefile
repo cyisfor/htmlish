@@ -2,10 +2,10 @@ all: setup test_parse test_parse_chat test_copynode parse unparse libhtmlish.a
 
 XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g  -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
-LINK=gcc $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+LINK=libtool --tag CC --mode link $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/\s*-lxml2\s*//g')
 
-O=$(patsubst %,o/%.o,$N) libxml2/.libs/libxml2.a html_when/libhtmlwhen.a html_when/libxmlfixes/libxmlfixes.a 
+O=$(patsubst %,o/%.o,$N) libxml2/libxml2.la html_when/libhtmlwhen.a html_when/libxmlfixes/libxmlfixes.a 
 S=$(patsubst %,src/%.c,$N)
 
 
@@ -36,7 +36,7 @@ N=htmlish parse_chat input error
 libhtmlish.a: $O
 	sh ./funnyar.sh $@ $O | ar -M
 
-libxml2/.libs/libxml2.a html_when/libhtmlwhen.a: descend
+libxml2/libxml2.la html_when/libhtmlwhen.a: descend
 
 descend:
 	$(MAKE) -C html_when libhtmlwhen.a
