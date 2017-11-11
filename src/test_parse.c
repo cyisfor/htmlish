@@ -43,10 +43,8 @@ const char defaultTemplate[] =
   "<!DOCTYPE html>\n"
   "<html>\n"
   "<head><meta charset=\"utf-8\"/>\n"
-  "<title/><header/></head>\n"
-  "<body><h1><intitle/></h1>\n"
-  "<top/><content/><footer/>\n"
-  "</body></html>";
+  "</head>\n"
+  "<body/></html>";
 
 
 int main(int argc, char *argv[])
