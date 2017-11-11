@@ -2,6 +2,7 @@
 
 #include "parse_chat.h"
 #include "libxmlfixes/src/libxmlfixes.h"
+#include "htmlish.h"
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
 #include <libxml/tree.h> // xmlCopyDoc
@@ -45,10 +46,10 @@ int main(int argc, char *argv[])
 		fflush(stdout);
 		xmlDoc* doc = readFunky(fd,LITLEN("bad file passed"));
 		assert(doc);
-		parse_chat(doc);
+		close(fd);
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
-		close(fd);
+		parse_chat(content, template);
 		xmlChar* result = NULL;
 		int rlen = 0;
 		htmlDocDumpMemory(doc,&result,&rlen);
