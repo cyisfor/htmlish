@@ -2,20 +2,13 @@ include coolmake/top.mk
 
 CFLAGS+=-I.
 
-all: setup test_parse test_parse_chat test_copynode parse unparse libhtmlish.a
+all: setup test_parse parse unparse libhtmlish.la
 
 XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g  -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
 LINK=libtool --tag CC --mode link $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/\s*-lxml2\s*//g')
 LIBS=libxmlfixes/libxmlfixes.la libxml2/libxml2.la html_when/libhtmlwhen.la
-N=test_copynode
-OUT=test_copynode
-$(eval $(PROGRAM))
-
-N=test_parse_chat parse_chat error
-OUT=test_parse_chat
-$(eval $(PROGRAM))
 
 N=test_parse htmlish parse_chat error
 OUT=test_parse
@@ -45,3 +38,8 @@ html_when/libhtmlwhen.la: | html_when
 
 html_when:
 	sh setup.sh
+
+libxml2/libxml2.la: | libxml2
+
+libxml2: | libxmlfixes/libxml2/
+	ln -rs $| $@
