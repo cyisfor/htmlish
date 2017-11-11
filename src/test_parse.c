@@ -6,6 +6,7 @@
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
 #include <libxml/tree.h> // xmlCopyDoc
+#include <libxml/xmlIO.h> // buffers
 
 #include <sys/mman.h> // mmap
 #include <sys/stat.h>
@@ -29,13 +30,24 @@ static void dump_to_mem(xmlDoc* doc,xmlChar** result, int* rlen) {
 		 totally ignored, and should not be there, since xmlOutputBuffer
 		 handles encoding from this point.
 	*/
-	htmlDocContentDumpOutput(out,src,NULL);
-	*rlen = xmlBufferGetSize(out);
+	htmlDocContentDumpOutput(out,doc,NULL);
+	*rlen = xmlOutputBufferGetSize(out);
+	const xmlChar* derp = xmlOutputBufferGetContent(out);
 	*result = malloc(*rlen);
-	memcpy(*resulc, xmlBufferGetContent(out), *rlen)
-	// libxml
-	assert(xmlOutputBufferClose(out) > 0);
+	memcpy(*result, derp, *rlen);
+	
+	assert(xmlOutputBufferClose(out) >= 0);
 }
+
+const char defaultTemplate[] =
+  "<!DOCTYPE html>\n"
+  "<html>\n"
+  "<head><meta charset=\"utf-8\"/>\n"
+  "<title/><header/></head>\n"
+  "<body><h1><intitle/></h1>\n"
+  "<top/><content/><footer/>\n"
+  "</body></html>";
+
 
 int main(int argc, char *argv[])
 {
@@ -47,10 +59,7 @@ int main(int argc, char *argv[])
 	}
 	xmlSetStructuredErrorFunc(NULL,on_error);
 
-	xmlDoc* template = htmlReadMemory(LITLEN(
-																			"<!DOCTYPE html>\n"
-																			"<html><head><meta charset=\"utf-8\"/></head>\n"
-																			"<body/></html>"),
+	xmlDoc* template = htmlReadMemory(defaultTemplate,sizeof(defaultTemplate)-1,
 																		"about:blank",
 																		"utf-8",
 																		HTML_PARSE_RECOVER |
@@ -73,7 +82,7 @@ int main(int argc, char *argv[])
 		close(fd);
 		xmlChar* result = NULL;
 		int rlen = 0;
-		htmlDocDumpMemory(doc,&result,&rlen);
+		dump_to_mem(doc,&result,&rlen);
 		snprintf(buf,0x100,"test/parse%d.html",i);
 		fd = open(buf,O_RDONLY);
 		if(fd < 0) {
