@@ -5,13 +5,22 @@
 #include "libxmlfixes/src/libxmlfixes.h"
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
-#include <libxml/xpath.h> // NodeSetPtr
 #include <libxml/xmlerror.h> // Set/GetError
 #include <stdbool.h>
 #include <assert.h>
 #include <fcntl.h> // open, O_*
 #include <unistd.h> // close
 #include <string.h> // strlen, memcmp
+
+/* xpath is not always configured! */
+typedef struct _xmlNodeSet xmlNodeSet;
+typedef xmlNodeSet *xmlNodeSetPtr;
+struct _xmlNodeSet {
+    int nodeNr;                 /* number of nodes in the set */
+    int nodeMax;                /* size of the array as allocated */
+    xmlNodePtr *nodeTab;        /* array of nodes in no particular order */
+    /* @@ with_ns to check wether namespace nodes should be looked at @@ */
+};
 
 const char defaultTemplate[] =
   "<!DOCTYPE html>\n"

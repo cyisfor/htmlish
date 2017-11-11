@@ -22,8 +22,6 @@ N=main htmlish parse_chat input error
 OUT=parse
 $(eval $(PROGRAM))
 
-parse: CFLAGS+=-E
-
 N=htmlish parse_chat input error
 OUT=libhtmlish.la
 $(eval $(PROGRAM))
