@@ -19,6 +19,24 @@
 
 #define LITLEN(a) (a),sizeof(a)-1
 
+
+static void dump_to_mem(xmlDoc* doc,xmlChar** result, int* rlen) {
+	// SIGH
+	static xmlCharEncodingHandler* encoding = NULL;
+	xmlOutputBuffer* out = xmlAllocOutputBuffer(encoding);
+	assert(out != NULL);
+	/* note, the encoding string passed to htmlDocContentDumpOutput is
+		 totally ignored, and should not be there, since xmlOutputBuffer
+		 handles encoding from this point.
+	*/
+	htmlDocContentDumpOutput(out,src,NULL);
+	*rlen = xmlBufferGetSize(out);
+	*result = malloc(*rlen);
+	memcpy(*resulc, xmlBufferGetContent(out), *rlen)
+	// libxml
+	assert(xmlOutputBufferClose(out) > 0);
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -33,9 +51,11 @@ int main(int argc, char *argv[])
 																			"<!DOCTYPE html>\n"
 																			"<html><head><meta charset=\"utf-8\"/></head>\n"
 																			"<body/></html>"),
-		"about:blank",
-		"UTF-8",
-		0);
+																		"about:blank",
+																		"utf-8",
+																		HTML_PARSE_RECOVER |
+																		HTML_PARSE_NOBLANKS |
+																		HTML_PARSE_COMPACT);
 
 	int i;
 	for(i=1;;++i) {
