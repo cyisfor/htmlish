@@ -1,6 +1,6 @@
 include coolmake/main.mk
-include coolmake/top.mk
-coolmake/main.mk: | coolmake
+
+coolmake/top.mk coolmake/main.mk: | coolmake
 	$(MAKE)
 coolmake: | html_when/libxmlfixes/coolmake
 	ln -rs $| $@
