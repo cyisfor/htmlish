@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		close(fd);
 		xmlNode* content = doc->children->next->children; // doctype -> html -> body
 		assert(content);
-		parse_chat(content, template);
+		parse_chat(content, content);
 		xmlChar* result = NULL;
 		int rlen = 0;
 		htmlDocDumpMemory(doc,&result,&rlen);
