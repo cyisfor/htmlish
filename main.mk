@@ -8,7 +8,7 @@ XMLVERSION:=include/libxml/xmlversion.h
 CFLAGS+=-g  -Ilibxml2/include -Ihtml_when/src/ -Ihtml_when/
 LINK=libtool --tag CC --mode link $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 LDLIBS+=$(shell xml2-config --libs | sed -e's/\s*-lxml2\s*//g')
-LIBS=libxmlfixes/libxmlfixes.la
+LIBS=libxmlfixes/libxmlfixes.la libxml2/libxml2.la html_when/libhtmlwhen.la
 N=test_copynode
 OUT=test_copynode
 $(eval $(PROGRAM))
@@ -38,3 +38,10 @@ libxmlfixes/libxmlfixes.la: | libxmlfixes
 
 libxmlfixes: | html_when/libxmlfixes
 	ln -rs $| $@
+
+
+html_when/libhtmlwhen.la: | html_when
+	$(MAKE) -C $|
+
+html_when:
+	sh setup.sh

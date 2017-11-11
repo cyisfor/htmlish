@@ -1,6 +1,6 @@
 #define _GNU_SOURCE // memcmp
 
-#include "libxmlfixes/libxmlfixes.h"
+#include "libxmlfixes/src/libxmlfixes.h"
 #include "htmlish.h"
 
 #include <libxml/HTMLtree.h> // output

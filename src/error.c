@@ -2,7 +2,7 @@
 #include "html_when.h"
 #define LITLEN(a) a,(sizeof(a)-1)
 
-#include "libxmlfixes/wanted_tags.h"
+#include "libxmlfixes/o/wanted_tags.gen.h"
 #include <libxml/xmlerror.h>
 #include <string.h>
 

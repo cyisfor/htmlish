@@ -4,8 +4,8 @@
 #include "input.h"
 #include "parse_chat.h"
 
-#include "libxmlfixes/wanted_tags.h"
-#include "libxmlfixes/libxmlfixes.h"
+#include "libxmlfixes/o/wanted_tags.gen.h"
+#include "libxmlfixes/src/libxmlfixes.h"
 
 #include "html_when.h" // coupling.....
 

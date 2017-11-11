@@ -1,7 +1,7 @@
 #define _GNU_SOURCE // memcmp
 
 #include "parse_chat.h"
-#include "libxmlfixes/libxmlfixes.h"
+#include "libxmlfixes/src/libxmlfixes.h"
 #include <libxml/HTMLtree.h> // output
 #include <libxml/HTMLparser.h> // input
 #include <libxml/tree.h> // xmlCopyDoc
