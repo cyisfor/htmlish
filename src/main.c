@@ -159,7 +159,7 @@ int main(void) {
 		doByFile(output,"footer");
 
 		bool as_child = false;
-		xmlNode* content = getContent(xmlDocGetRootElement(output),false,&as_child);
+		xmlNode* content = getContent(xmlDocGetRootElement(output),true,&as_child);
 		htmlish(content,0,as_child);
 		if(!as_child) {
 			// throw away placeholder node
