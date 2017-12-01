@@ -125,14 +125,18 @@ struct ishctx {
 
 bool debugging = false;
 
-static xmlNode* copyToNew(xmlNode* old, xmlNode* parent) {
-  xmlNode* new = xmlDocCopyNode(old,parent->doc,1);
-  xmlAddChild(parent,new);
+static xmlNode* copyToNew(xmlNode* old, xmlNode* base, bool sibling) {
+  xmlNode* new = xmlDocCopyNode(old,base->doc,1);
+  if(sibling) {
+		xmlAddNextSibling(base,new);
+	} else {
+		xmlAddChild(base,new);
+	}
   return new;
 }
 
-static xmlNode* moveToNew(xmlNode* old, xmlNode* parent) {
-  xmlNode* new = copyToNew(old,parent);
+static xmlNode* moveToNew(xmlNode* old, xmlNode* base, bool sibling) {
+  xmlNode* new = copyToNew(old,base);
   xmlUnlinkNode(old);
   return new;
 }
@@ -202,6 +206,7 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 		.first = true
 	};
 	processRoot(&subctx,e);
+	xmlNode* parent = ctx->e;
 	xmlNode* ne = moveToNew(e,ctx->e);
 	ne->children = dangling->children;
 	xmlUnlinkNode(dangling);
