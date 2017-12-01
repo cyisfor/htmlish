@@ -136,13 +136,13 @@ static xmlNode* copyToNew(xmlNode* old, xmlNode* base, bool sibling) {
 }
 
 static xmlNode* moveToNew(xmlNode* old, xmlNode* base, bool sibling) {
-  xmlNode* new = copyToNew(old,base);
+  xmlNode* new = copyToNew(old,base,sibling);
   xmlUnlinkNode(old);
   return new;
 }
 static void moveToNewDerp(xmlNode* old, void* ctx) {
   xmlNode* head = (xmlNode*) ctx;
-  moveToNew(old,head);
+  moveToNew(old,head,false);
 }
 
 static void newthingy(struct ishctx* ctx, xmlNode* thingy) {
@@ -206,9 +206,11 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 		.first = true
 	};
 	processRoot(&subctx,e);
-	xmlNode* parent = ctx->e;
-	xmlNode* ne = moveToNew(e,ctx->e);
+	xmlNode* base = ctx->e;
+	xmlNode* ne = moveToNew(e,base,!ctx->inParagraph);
+	ctx->e = ne;
 	ne->children = dangling->children;
+	dangling->children = NULL;
 	xmlUnlinkNode(dangling);
 }
 
