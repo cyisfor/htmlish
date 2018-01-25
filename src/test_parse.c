@@ -110,7 +110,7 @@ WRITE_ANYWAY:
 				fclose(d);
 				int pid = fork();
 				if(pid == 0) {
-					execlp("git","git","diff","--word-diff",buf,"derp",NULL);
+					execlp("diff","diff","-u",buf,"derp",NULL);
 				}
 				waitpid(pid,NULL,0);
 				puts("^C to not update derp");
