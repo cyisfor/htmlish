@@ -310,11 +310,11 @@ static
 void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 	/* after hishification,chat will now be a list of paragraphs, each of which have a name,
 		 then text containing :, then a value. */
-	xmlNode* cur = e->children;
+	xmlNode* cur;
 	xmlNode* middle = NULL;
 	xmlChar* colon = NULL; // depends on if middle is set
 	// searching for the middle element (a text node with a colon)
-	while(cur) {
+	for(cur=e->children;cur;cur=cur->next) {
 		if(cur->type == XML_TEXT_NODE) {
 			colon = strchr(cur->content,':');
 			if(colon != NULL) {
@@ -325,14 +325,13 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 	}
 
 	if(middle) {
-		puts("found middle!");
 		// found a colon-separator!
 		// divide the paragraph's children in half... before is the name, after is the value. Also divide the middle in half, to two text nodes before and after
 		return divvy_siblings(ctx, middle, colon - middle->content);
 	} else {
 		// just add a single row cell
-		xmlNode* row = xmlNewNode(middle->ns,"tr");
-		xmlNode* cell = xmlNewNode(middle->ns,"td");
+		xmlNode* row = xmlNewNode(e->ns,"tr");
+		xmlNode* cell = xmlNewNode(e->ns,"td");
 		xmlSetProp(cell, "colspan","2");
 		xmlAddChild(ctx->dest, row);
 		xmlAddChild(row,cell);
