@@ -209,7 +209,8 @@ void subhish(xmlNode* e, struct ishctx* ctx) {
 	xmlNode* base = ctx->e;
 	// !ctx->inParagraph...?
 	xmlNode* ne = moveToNew(e,base,false);
-	ctx->e = ne;
+	newthingy(ctx,ne);
+
 	ne->children = dangling->children;
 	dangling->children = NULL;
 	xmlUnlinkNode(dangling);

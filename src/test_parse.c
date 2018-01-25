@@ -99,10 +99,20 @@ WRITE_ANYWAY:
 				printf("sizes don't match! expected: %d actual: %d\n",info.st_size,rlen);
 			}
 			if(info.st_size != rlen || 0 != memcmp(expected,result,rlen)) {
+				puts(buf);
+				sleep(1);
 				puts("expected:");
 				fwrite(expected,info.st_size,1,stdout);
 				puts("actual:");
 				fwrite(result,rlen,1,stdout);
+				FILE* d = fopen("derp","wt");
+				fwrite(result, rlen, 1, d);
+				fclose(d);
+				int pid = fork();
+				if(pid == 0) {
+					execlp("git","git","diff","--word-diff",buf,"derp",NULL);
+				}
+				waitpid(pid,NULL,0);
 				puts("^C to not update derp");
 				getchar();
 				goto WRITE_ANYWAY;
