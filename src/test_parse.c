@@ -64,12 +64,11 @@ int main(int argc, char *argv[])
 																		HTML_PARSE_NOBLANKS |
 																		HTML_PARSE_COMPACT);
 
-	int i;
-	for(i=1;;++i) {
+	void testone(int i) {
 		char buf[0x100];
 		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
-		if(fd < 0) break;
+		if(fd < 0) exit(3);
 		printf("test %d...",i);
 		fflush(stdout);
 		xmlDoc* doc = xmlCopyDoc(template, 1);
@@ -110,6 +109,14 @@ WRITE_ANYWAY:
 			}
 		}
 		puts("passed.");
+	}
+	if(getenv("test")) {
+		testone(strtol(getenv("test"),NULL,0));
+	} else {
+		int i;
+		for(i=1;;++i) {
+			testone(i);
+		}
 	}
 			
 	return 0;

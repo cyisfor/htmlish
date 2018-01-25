@@ -559,7 +559,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 	processRoot(&ctx,root);
 
 	// parses the htmlish OUTPUT
-	parse_chat(content,ohead); // <chat> tags
+	//parse_chat(content,ohead); // <chat> tags
 }
 
 

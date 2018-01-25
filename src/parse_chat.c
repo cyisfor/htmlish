@@ -312,11 +312,11 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 		 then text containing :, then a value. */
 	xmlNode* cur = e->children;
 	xmlNode* middle = NULL;
-
+	xmlChar* colon = NULL; // depends on if middle is set
 	// searching for the middle element (a text node with a colon)
 	while(cur) {
 		if(cur->type == XML_TEXT_NODE) {
-			xmlChar* colon = strchr(cur->content,':');
+			colon = strchr(cur->content,':');
 			if(colon != NULL) {
 				middle = cur;
 				break;
@@ -325,6 +325,7 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 	}
 
 	if(middle) {
+		puts("found middle!");
 		// found a colon-separator!
 		// divide the paragraph's children in half... before is the name, after is the value. Also divide the middle in half, to two text nodes before and after
 		return divvy_siblings(ctx, middle, colon - middle->content);
@@ -338,6 +339,7 @@ void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 		xmlNode* cur = e->children;
 		do {
 			xmlNode* next = cur->next;
+			xmlUnlinkNode(cur);
 			xmlAddChild(cell,cur);
 			cur = next;
 		} while(cur);
