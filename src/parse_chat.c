@@ -310,32 +310,37 @@ static
 void process_paragraph(struct chatctx* ctx, xmlNode* e) {
 	/* after hishification,chat will now be a list of paragraphs, each of which have a name,
 		 then text containing :, then a value. */
-	xmlNode* middle = e->children;
+	xmlNode* cur = e->children;
+	xmlNode* middle = NULL;
 
-	void singlecellrow(void) {
+	// searching for the middle element (a text node with a colon)
+	while(cur) {
+		if(cur->type == XML_TEXT_NODE) {
+			xmlChar* colon = strchr(cur->content,':');
+			if(colon != NULL) {
+				middle = cur;
+				break;
+			}
+		}
+	}
+
+	if(middle) {
+		// found a colon-separator!
+		// divide the paragraph's children in half... before is the name, after is the value. Also divide the middle in half, to two text nodes before and after
+		return divvy_siblings(ctx, middle, colon - middle->content);
+	} else {
+		// just add a single row cell
 		xmlNode* row = xmlNewNode(middle->ns,"tr");
 		xmlNode* cell = xmlNewNode(middle->ns,"td");
+		xmlSetProp(cell, "colspan","2");
 		xmlAddChild(ctx->dest, row);
 		xmlAddChild(row,cell);
-		xmlNode* cur = middle;
+		xmlNode* cur = e->children;
 		do {
 			xmlNode* next = cur->next;
 			xmlAddChild(cell,cur);
 			cur = next;
 		} while(cur);
-	}
-	if(middle->type == XML_TEXT_NODE) {
-		xmlChar* colon = strchr(middle->content,':');
-		if(colon == NULL) {
-			// if the first text element has no colon, just add a single cell row
-			singlecellrow();
-		} else {
-			// divide this text node in half... before is the name, after is the value. Then add siblings after the value (italics and such)
-			return divvy_siblings(ctx, middle, colon - middle->content);
-		}
-	} else {
-		// doesn't start with text, so 
-		singlecellrow();
 	}
 }
 
