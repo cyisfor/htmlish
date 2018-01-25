@@ -1,6 +1,6 @@
 include coolmake/top.mk
 
-CFLAGS+=-I.
+CFLAGS+=-I. $(FOOP)
 
 all: setup test_parse parse unparse libhtmlish.la
 
