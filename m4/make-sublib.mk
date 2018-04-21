@@ -11,4 +11,11 @@ $(srcdir)/$(name)/build: | $(srcdir)/$(name)
 
 $(srcdir)/$(name)/configure: | $(srcdir)/$(name)/configure.ac
   (cd $(srcdir)/$(name); . ./autogen.sh)
+
+$(srcdir)/$(name)/configure.ac:
+	if [[ -d "$repodir" ]]; then \
+		git clone $repodir $(srcdir)/$(name)/; \
+	else \
+		git clone $repourl $(srcdir)/$(name)/ \
+	fi
 endef

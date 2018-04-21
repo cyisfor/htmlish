@@ -20,3 +20,7 @@ include m4/make-sublib.mk
 name=html_when
 target=libhtmlwhen.la
 $(eval $(make_sublib))
+
+name=libxml2
+target=libxml2.la
+$(eval $(make_sublib))
