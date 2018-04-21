@@ -16,8 +16,7 @@ libhtmlish_la_SOURCES = \
 	src/error.c
 libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
 
-html_when/libhtmlwhen.la: | html_when
-  $(MAKE) -C $|
-
-html_when:
-	
+include m4/make-sublib.mk
+name=html_when
+target=libhtmlwhen.la
+$(eval $(make_sublib))
