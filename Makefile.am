@@ -19,10 +19,9 @@ libhtmlish_la_SOURCES = \
 libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
 
 include m4/make-sublib.mk
-name:=html_when
-target:=libhtmlwhen.la
-$(eval $(make_sublib))
-$(eval $(make_local_git))
+m4_define([@name@], [html_when])
+m4_define([@target@], [libhtmlwhen.la])
+@MAKE_SUBLIB@
 
 name:=libxml2
 target:=libxml2.la
