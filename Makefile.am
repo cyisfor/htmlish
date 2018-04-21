@@ -13,13 +13,16 @@ libhtmlish_la_SOURCES = \
 	src/htmlish.c \
 	src/parse_chat.c \
 	src/input.c \
-	src/error.c
+	src/error.c \
+	$(XMLFIXES_C)
+
 libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
 
 include m4/make-sublib.mk
 name=html_when
 target=libhtmlwhen.la
 $(eval $(make_sublib))
+$(eval $(make_local_git))
 
 name=libxml2
 target=libxml2.la

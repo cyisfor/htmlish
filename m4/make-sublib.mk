@@ -12,6 +12,9 @@ $(srcdir)/$(name)/build: | $(srcdir)/$(name)
 $(srcdir)/$(name)/configure: | $(srcdir)/$(name)/configure.ac
   (cd $(srcdir)/$(name); . ./autogen.sh)
 
+endef
+
+define make_local_git
 $(srcdir)/$(name)/configure.ac:
 	if [[ -d "$repodir" ]]; then \
 		git clone $repodir $(srcdir)/$(name)/; \
