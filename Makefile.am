@@ -17,10 +17,7 @@ libhtmlish_la_SOURCES = \
 	$(XMLFIXES_C)
 
 libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
-m4_define([@name@], [q])
-m4_define([@target@], [libhtmlwhen.la])
-MAKE_SUBLIB(
+include m4/make-sublib.mk
 
-m4_define([@name@], [libxml2])
-m4_define([@target@], [libxml2.la])
-MAKE_SUBLIB
+$(call make_sublib, html_when, libhtmlwhen.la)
+$(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git)
