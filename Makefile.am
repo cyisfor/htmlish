@@ -17,3 +17,10 @@ libhtmlish_la_SOURCES = \
 	$(XMLFIXES_C)
 
 libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
+m4_define([@name@], [q])
+m4_define([@target@], [libhtmlwhen.la])
+MAKE_SUBLIB(
+
+m4_define([@name@], [libxml2])
+m4_define([@target@], [libxml2.la])
+MAKE_SUBLIB

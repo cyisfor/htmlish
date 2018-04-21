@@ -1,23 +1,31 @@
-AC_DEFUN([MAKE_SUBLIB],[
+# because autotools devs are retarded nazis
+# we're not allowed to redefine named variables
+# so only meaningless $(1) $(2) etc are allowed
+# this is because they know what's best for us
+# and what we were doing isn't the right way to do it anyway
+# not that they know what the right way is
+# but it's surely not what they don't allow
 
-$(srcdir)/@name@/build/@target@: | $(srcdir)/@name@/build/Makefile 
-  $(MAKE) -C $(srcdir)/@name@/build
+defun make_sublib
+$(srcdir)/$(1)/build/$(2): | $(srcdir)/$(1)/build/Makefile 
+  $(MAKE) -C $(srcdir)/$(1)/build
 
-$(srcdir)/@name@/build/Makefile: $(srcdir)/@name@/configure | $(srcdir)/$(name
+$(srcdir)/$(1)/build/Makefile: $(srcdir)/$(1)/configure | $(srcdir)/$(name
 )/build
-  (cd $(srcdir)/@name@/build; . ../$(srcdir)/@name@/configure)
+  (cd $(srcdir)/$(1)/build; . ../$(srcdir)/$(1)/configure)
 
-$(srcdir)/@name@/build: | $(srcdir)/@name@
+$(srcdir)/$(1)/build: | $(srcdir)/$(1)
   mkdir $$@
 
-$(srcdir)/@name@/configure: | $(srcdir)/@name@/configure.ac
-  (cd $(srcdir)/@name@; . ./autogen.sh)
-])
+$(srcdir)/$(1)/configure: | $(srcdir)/$(1)/configure.ac
+  (cd $(srcdir)/$(1); . ./autogen.sh)
+endef
 
-AC_DEFUN([MAKE_LOCAL_GIT], [
-	if [[ -d "@repodir@" ]]; then 
-		git clone @repodir@ $(srcdir)/@name@/; 
-	else 
-		git clone @repourl@ $(srcdir)/@name@/ 
+defun make_local_git
+$(srcdir)/$(1)/configure.ac:
+	if [[ -d "$(2)" ]]; then \
+		git clone $(2) $(srcdir)/$(1)/ \
+	else \
+		git clone $(3) $(srcdir)/$(1)/ \
 	fi
-])
+endef
