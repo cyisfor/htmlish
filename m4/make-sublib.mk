@@ -6,7 +6,7 @@
 # not that they know what the right way is
 # but it's surely not what they don't allow
 
-defun make_sublib_fn
+define make_sublib_fn
 $(srcdir)/$(1)/build/$(2): | $(srcdir)/$(1)/build/Makefile 
   $(MAKE) -C $(srcdir)/$(1)/build
 
@@ -21,7 +21,7 @@ $(srcdir)/$(1)/configure: | $(srcdir)/$(1)/configure.ac
   (cd $(srcdir)/$(1); . ./autogen.sh)
 endef
 
-defun make_local_git_fn
+define make_local_git_fn
 $(srcdir)/$(1)/configure.ac:
 	if [[ -d "$(2)" ]]; then \
 		git clone $(2) $(srcdir)/$(1)/ \
