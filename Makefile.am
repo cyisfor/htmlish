@@ -8,7 +8,7 @@ XMLINC=-I$(srcdir)/libxml2/include -I$(srcdir)/libxml2/build/include
 
 lib_LTLIBRARIES = libhtmlish.la
 
-libhtmlish_la_CFLAGS=$(XMLINC) -I $(srcdir)/htmlish/html_when/src -I $(srcdir)/htmlish/src -I $(srcdir)/libxmlfixes/src
+libhtmlish_la_CFLAGS=$(XMLINC) -I $(srcdir)/html_when/src -I $(srcdir)/src -I $(srcdir)/libxmlfixes/src
 libhtmlish_la_SOURCES = \
 	src/htmlish.c \
 	src/parse_chat.c \
