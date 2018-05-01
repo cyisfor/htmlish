@@ -2,8 +2,6 @@ BUILT_SOURCES =
 
 ACLOCAL_AMFLAGS = -I m4
 
-XMLFIXES_C=$(srcdir)/libxmlfixes/src/libxmlfixes.c
-
 XMLINC=-I$(srcdir)/libxml2/include -I$(srcdir)/libxml2/build/include
 
 lib_LTLIBRARIES = libhtmlish.la
@@ -13,10 +11,9 @@ libhtmlish_la_SOURCES = \
 	src/htmlish.c \
 	src/parse_chat.c \
 	src/input.c \
-	src/error.c \
-	$(XMLFIXES_C)
+	src/error.c
 
-libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
+libhtmlish_la_LIBADD = $(srcdir)/html_when/libhtmlwhen.la
 include m4/make-sublib.mk
 
 A:=$(info $(call make_sublib, html_when, libhtmlwhen.la))
