@@ -989,8 +989,8 @@ $(srcdir)/$(1)/configure.ac:
 	fi
 endef
 
-$(message $(call make_sublib, html_when, libhtmlwhen.la))
-$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
+
+B:=$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
