@@ -989,7 +989,7 @@ $(srcdir)/$(1)/configure.ac:
 	fi
 endef
 
-
+A:=$(info $(call make_sublib_fn,html_when,libhtmlwhen.la))
 B:=$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

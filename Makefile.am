@@ -19,5 +19,5 @@ libhtmlish_la_SOURCES = \
 libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
 include m4/make-sublib.mk
 
-$(info $(call make_sublib, html_when, libhtmlwhen.la))
-$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
+A:=$(info $(call make_sublib, html_when, libhtmlwhen.la))
+B:=$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
