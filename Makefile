@@ -1,7 +1,7 @@
 all: build/Makefile
 	$(MAKE) -C build && $(MAKE) -C build install
 
-build/Makefile: configure | build
+build/Makefile: configure libxmlfixes/configure libxml2/configure | build
 	cd build && ../configure --prefix=$(realpath .) --bindir=$(realpath .)
 
 configure: configure.ac Makefile.in 
@@ -22,5 +22,8 @@ m4/libtool.m4:
 
 build:
 	mkdir $@
+
+libxml2/configure libxmlfixes/configure:
+	cd $(dir $@) && autoreconf -i
 
 .PHONY: all
