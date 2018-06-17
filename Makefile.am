@@ -18,10 +18,10 @@ libhtmlish_la_SOURCES = \
 
 parse_LDADD = libhtmlish.la \
 	libxmlfixes/libxmlfixes.la \
-	libxmlfixes/libxml2/libxml2.la
+	libxml2/libxml2.la
 parse_SOURCES = src/main.c
 
 libxmlfixes/libxmlfixes.la:
 	$(MAKE) -C libxmlfixes
-libxmlfixes/libxml2/libxml2.la:
+libxml2/libxml2.la:
 	$(MAKE) -C libxmlfixes/libxml2
