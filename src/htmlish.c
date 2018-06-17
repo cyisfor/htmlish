@@ -7,8 +7,6 @@
 #include "libxmlfixes/wanted_tags.gen.h"
 #include "libxmlfixes.h"
 
-#include "html_when.h" // coupling.....
-
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/HTMLtree.h>
@@ -534,7 +532,6 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 		.first = as_children
 	};
 
-	html_when((xmlNode*)doc); // XXX: coupling
 	xmlNode* root = xmlDocGetRootElement(doc);
 	assert(root);
 	// html/body

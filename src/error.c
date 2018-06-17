@@ -1,5 +1,4 @@
 #include "htmlish.h"
-#include "html_when.h"
 #define LITLEN(a) a,(sizeof(a)-1)
 
 #include "libxmlfixes/wanted_tags.gen.h"
@@ -10,7 +9,6 @@
 #include <stdio.h>
 
 bool htmlish_handled_error(xmlErrorPtr error) {
-	if(html_when_handled_error(error)) return true;
 	switch(error->code) {
 	case XML_ERR_ENTITYREF_SEMICOL_MISSING:
 		if(0==strncmp(error->message,LITLEN("htmlParseEntityRef: expecting ';'"))) {
