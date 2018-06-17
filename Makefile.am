@@ -17,11 +17,11 @@ libhtmlish_la_SOURCES = \
 	src/error.c
 
 parse_LDADD = libhtmlish.la \
-	$(srcdir)/html_when/libhtmlwhen.la
+	libxmlfixes/libxmlfixes.la \
+	libxmlfixes/libxml2/libxml2.la
 parse_SOURCES = src/main.c
 
-libhtmlish_la_LIBADD = $(srcdir)/html_when/libhtmlwhen.la
-include m4/make-sublib.mk
-
-A:=$(info $(call make_sublib, html_when, libhtmlwhen.la))
-B:=$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
+libxmlfixes/libxmlfixes.la:
+	$(MAKE) -C libxmlfixes
+libxmlfixes/libxml2/libxml2.la:
+	$(MAKE) -C libxmlfixes/libxml2

@@ -1,5 +1,3 @@
-#include "html_when.h"
-
 #include "input.h"
 #include "htmlish.h"
 #include "libxmlfixes/src/libxmlfixes.h"
@@ -166,7 +164,6 @@ int main(void) {
 			xmlUnlinkNode(content);
 			xmlFreeNode(content);
 		}
-		html_when((xmlNode*)output); // manage <when> logic
     dump_to_fd(1,output);
     return 0;
 }
