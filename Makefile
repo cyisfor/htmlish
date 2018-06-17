@@ -5,7 +5,7 @@ build/Makefile: configure libxmlfixes/configure libxml2/configure | build
 	cd build && ../configure --prefix=$(realpath .) --bindir=$(realpath .)
 
 define AUTORECONF
-$(TOP)/configure: $(TOP)/configure.ac $(TOP)/Makefile.am
+$(TOP)/configure: $(TOP)/configure.ac $(TOP)/Makefile.in
 	cd $(TOP) && autoconf
 
 $(TOP)/config.h.in:
