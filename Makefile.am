@@ -1,4 +1,4 @@
-BUILT_SOURCES =
+BUILT_SOURCES = libxmlfixes/wanted_tags.gen.h
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -21,7 +21,7 @@ parse_LDADD = libhtmlish.la \
 	libxml2/libxml2.la
 parse_SOURCES = src/main.c
 
-libxmlfixes/libxmlfixes.la:
+libxmlfixes/libxmlfixes.la libxmlfixes/wanted_tags.gen.h:
 	$(MAKE) -C libxmlfixes
 libxml2/libxml2.la:
-	$(MAKE) -C libxmlfixes/libxml2
+	$(MAKE) -C libxml2

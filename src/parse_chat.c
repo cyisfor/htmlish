@@ -1,6 +1,6 @@
 #define _GNU_SOURCE // memchr
 
-#include "libxmlfixes/o/wanted_tags.gen.h"
+#include "libxmlfixes/wanted_tags.gen.h"
 #include "libxmlfixes/src/libxmlfixes.h" // nextE
 
 #include "parse_chat.h"
