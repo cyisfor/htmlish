@@ -363,7 +363,7 @@ void process_chat(struct chatctx* ctx, xmlNode* chat) {
 	}
 	// okay, done. replace the destroyed chat tag with our table.
 	xmlAddNextSibling(chat,table);
-//	xmlUnlinkNode(chat);
+	xmlUnlinkNode(chat);
 	xmlFreeNode(chat);
 }
 
