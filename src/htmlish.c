@@ -347,6 +347,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 					case W_OL:
 					case W_P:
 					case W_DIV:
+					case W_DD:
 					case W_TABLE:
 					case W_HR:
 					case W_BLOCKQUOTE:

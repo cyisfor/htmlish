@@ -22,6 +22,7 @@
 # not that they know what the right way is
 # but it's surely not what they don't allow
 
+
 VPATH = ..
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -96,6 +97,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = x86_64-pc-linux-gnu
 host_triplet = x86_64-pc-linux-gnu
+bin_PROGRAMS = parse$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -112,6 +114,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)"
+PROGRAMS = $(bin_PROGRAMS)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -139,22 +143,19 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libhtmlish_la_DEPENDENCIES = html_when/libhtmlwhen.la
+libhtmlish_la_DEPENDENCIES = $(srcdir)/html_when/libhtmlwhen.la
 am__dirstamp = $(am__leading_dot)dirstamp
-am__objects_1 = libxmlfixes/src/libhtmlish_la-libxmlfixes.lo
-am_libhtmlish_la_OBJECTS = src/libhtmlish_la-htmlish.lo \
-	src/libhtmlish_la-parse_chat.lo src/libhtmlish_la-input.lo \
-	src/libhtmlish_la-error.lo $(am__objects_1)
+am_libhtmlish_la_OBJECTS = src/htmlish.lo src/parse_chat.lo \
+	src/input.lo src/error.lo
 libhtmlish_la_OBJECTS = $(am_libhtmlish_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-libhtmlish_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libhtmlish_la_CFLAGS) \
-	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_parse_OBJECTS = src/main.$(OBJEXT)
+parse_OBJECTS = $(am_parse_OBJECTS)
+parse_DEPENDENCIES = libhtmlish.la $(srcdir)/html_when/libhtmlwhen.la
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -170,12 +171,9 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade =  \
-	libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Plo \
-	src/$(DEPDIR)/libhtmlish_la-error.Plo \
-	src/$(DEPDIR)/libhtmlish_la-htmlish.Plo \
-	src/$(DEPDIR)/libhtmlish_la-input.Plo \
-	src/$(DEPDIR)/libhtmlish_la-parse_chat.Plo
+am__depfiles_remade = src/$(DEPDIR)/error.Plo \
+	src/$(DEPDIR)/htmlish.Plo src/$(DEPDIR)/input.Plo \
+	src/$(DEPDIR)/main.Po src/$(DEPDIR)/parse_chat.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -195,8 +193,8 @@ AM_V_CCLD = $(am__v_CCLD_$(V))
 am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libhtmlish_la_SOURCES)
-DIST_SOURCES = $(libhtmlish_la_SOURCES)
+SOURCES = $(libhtmlish_la_SOURCES) $(parse_SOURCES)
+DIST_SOURCES = $(libhtmlish_la_SOURCES) $(parse_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -369,20 +367,24 @@ top_builddir = .
 top_srcdir = ..
 BUILT_SOURCES = 
 ACLOCAL_AMFLAGS = -I m4
-XMLFIXES_C = $(srcdir)/libxmlfixes/src/libxmlfixes.c
 XMLINC = -I$(srcdir)/libxml2/include -I$(srcdir)/libxml2/build/include
 lib_LTLIBRARIES = libhtmlish.la
-libhtmlish_la_CFLAGS = $(XMLINC) -I $(srcdir)/htmlish/html_when/src -I $(srcdir)/htmlish/src -I $(srcdir)/libxmlfixes/src
+AM_CFLAGS = $(XMLINC) -I $(srcdir)/html_when/src -I $(srcdir)/src -I $(srcdir)/libxmlfixes/src
 libhtmlish_la_SOURCES = \
 	src/htmlish.c \
 	src/parse_chat.c \
 	src/input.c \
-	src/error.c \
-	$(XMLFIXES_C)
+	src/error.c
 
-libhtmlish_la_LIBADD = html_when/libhtmlwhen.la
+parse_LDADD = libhtmlish.la \
+	$(srcdir)/html_when/libhtmlwhen.la
+
+parse_SOURCES = src/main.c
+libhtmlish_la_LIBADD = $(srcdir)/html_when/libhtmlwhen.la
 make_sublib = $(eval $(call make_sublib_fn, $(1), $(2)))
 make_local_git = $(eval $(call make_local_git_fn, $(1), $(2), $(3)))
+A := $(info $(call make_sublib, html_when, libhtmlwhen.la))
+B := $(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
 all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -437,6 +439,55 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+	fi; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p \
+	 || test -f $$p1 \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' \
+	    -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' \
+	`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(bindir)" && rm -f $$files
+
+clean-binPROGRAMS:
+	@list='$(bin_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
@@ -478,42 +529,32 @@ src/$(am__dirstamp):
 src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
-src/libhtmlish_la-htmlish.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
-src/libhtmlish_la-parse_chat.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
-src/libhtmlish_la-input.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
-src/libhtmlish_la-error.lo: src/$(am__dirstamp) \
-	src/$(DEPDIR)/$(am__dirstamp)
-libxmlfixes/src/$(am__dirstamp):
-	@$(MKDIR_P) libxmlfixes/src
-	@: > libxmlfixes/src/$(am__dirstamp)
-libxmlfixes/src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) libxmlfixes/src/$(DEPDIR)
-	@: > libxmlfixes/src/$(DEPDIR)/$(am__dirstamp)
-libxmlfixes/src/libhtmlish_la-libxmlfixes.lo:  \
-	libxmlfixes/src/$(am__dirstamp) \
-	libxmlfixes/src/$(DEPDIR)/$(am__dirstamp)
+src/htmlish.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/parse_chat.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/input.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/error.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 
 libhtmlish.la: $(libhtmlish_la_OBJECTS) $(libhtmlish_la_DEPENDENCIES) $(EXTRA_libhtmlish_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libhtmlish_la_LINK) -rpath $(libdir) $(libhtmlish_la_OBJECTS) $(libhtmlish_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) -rpath $(libdir) $(libhtmlish_la_OBJECTS) $(libhtmlish_la_LIBADD) $(LIBS)
+src/main.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+
+parse$(EXEEXT): $(parse_OBJECTS) $(parse_DEPENDENCIES) $(EXTRA_parse_DEPENDENCIES) 
+	@rm -f parse$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(parse_OBJECTS) $(parse_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f libxmlfixes/src/*.$(OBJEXT)
-	-rm -f libxmlfixes/src/*.lo
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
 
 distclean-compile:
 	-rm -f *.tab.c
 
-include libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Plo # am--include-marker
-include src/$(DEPDIR)/libhtmlish_la-error.Plo # am--include-marker
-include src/$(DEPDIR)/libhtmlish_la-htmlish.Plo # am--include-marker
-include src/$(DEPDIR)/libhtmlish_la-input.Plo # am--include-marker
-include src/$(DEPDIR)/libhtmlish_la-parse_chat.Plo # am--include-marker
+include src/$(DEPDIR)/error.Plo # am--include-marker
+include src/$(DEPDIR)/htmlish.Plo # am--include-marker
+include src/$(DEPDIR)/input.Plo # am--include-marker
+include src/$(DEPDIR)/main.Po # am--include-marker
+include src/$(DEPDIR)/parse_chat.Plo # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -545,47 +586,11 @@ am--depfiles: $(am__depfiles_remade)
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(AM_V_CC_no)$(LTCOMPILE) -c -o $@ $<
 
-src/libhtmlish_la-htmlish.lo: src/htmlish.c
-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -MT src/libhtmlish_la-htmlish.lo -MD -MP -MF src/$(DEPDIR)/libhtmlish_la-htmlish.Tpo -c -o src/libhtmlish_la-htmlish.lo `test -f 'src/htmlish.c' || echo '$(srcdir)/'`src/htmlish.c
-	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libhtmlish_la-htmlish.Tpo src/$(DEPDIR)/libhtmlish_la-htmlish.Plo
-#	$(AM_V_CC)source='src/htmlish.c' object='src/libhtmlish_la-htmlish.lo' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -c -o src/libhtmlish_la-htmlish.lo `test -f 'src/htmlish.c' || echo '$(srcdir)/'`src/htmlish.c
-
-src/libhtmlish_la-parse_chat.lo: src/parse_chat.c
-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -MT src/libhtmlish_la-parse_chat.lo -MD -MP -MF src/$(DEPDIR)/libhtmlish_la-parse_chat.Tpo -c -o src/libhtmlish_la-parse_chat.lo `test -f 'src/parse_chat.c' || echo '$(srcdir)/'`src/parse_chat.c
-	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libhtmlish_la-parse_chat.Tpo src/$(DEPDIR)/libhtmlish_la-parse_chat.Plo
-#	$(AM_V_CC)source='src/parse_chat.c' object='src/libhtmlish_la-parse_chat.lo' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -c -o src/libhtmlish_la-parse_chat.lo `test -f 'src/parse_chat.c' || echo '$(srcdir)/'`src/parse_chat.c
-
-src/libhtmlish_la-input.lo: src/input.c
-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -MT src/libhtmlish_la-input.lo -MD -MP -MF src/$(DEPDIR)/libhtmlish_la-input.Tpo -c -o src/libhtmlish_la-input.lo `test -f 'src/input.c' || echo '$(srcdir)/'`src/input.c
-	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libhtmlish_la-input.Tpo src/$(DEPDIR)/libhtmlish_la-input.Plo
-#	$(AM_V_CC)source='src/input.c' object='src/libhtmlish_la-input.lo' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -c -o src/libhtmlish_la-input.lo `test -f 'src/input.c' || echo '$(srcdir)/'`src/input.c
-
-src/libhtmlish_la-error.lo: src/error.c
-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -MT src/libhtmlish_la-error.lo -MD -MP -MF src/$(DEPDIR)/libhtmlish_la-error.Tpo -c -o src/libhtmlish_la-error.lo `test -f 'src/error.c' || echo '$(srcdir)/'`src/error.c
-	$(AM_V_at)$(am__mv) src/$(DEPDIR)/libhtmlish_la-error.Tpo src/$(DEPDIR)/libhtmlish_la-error.Plo
-#	$(AM_V_CC)source='src/error.c' object='src/libhtmlish_la-error.lo' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -c -o src/libhtmlish_la-error.lo `test -f 'src/error.c' || echo '$(srcdir)/'`src/error.c
-
-libxmlfixes/src/libhtmlish_la-libxmlfixes.lo: libxmlfixes/src/libxmlfixes.c
-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -MT libxmlfixes/src/libhtmlish_la-libxmlfixes.lo -MD -MP -MF libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Tpo -c -o libxmlfixes/src/libhtmlish_la-libxmlfixes.lo `test -f 'libxmlfixes/src/libxmlfixes.c' || echo '$(srcdir)/'`libxmlfixes/src/libxmlfixes.c
-	$(AM_V_at)$(am__mv) libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Tpo libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Plo
-#	$(AM_V_CC)source='libxmlfixes/src/libxmlfixes.c' object='libxmlfixes/src/libhtmlish_la-libxmlfixes.lo' libtool=yes \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhtmlish_la_CFLAGS) $(CFLAGS) -c -o libxmlfixes/src/libhtmlish_la-libxmlfixes.lo `test -f 'libxmlfixes/src/libxmlfixes.c' || echo '$(srcdir)/'`libxmlfixes/src/libxmlfixes.c
-
 mostlyclean-libtool:
 	-rm -f *.lo
 
 clean-libtool:
 	-rm -rf .libs _libs
-	-rm -rf libxmlfixes/src/.libs libxmlfixes/src/_libs
 	-rm -rf src/.libs src/_libs
 
 distclean-libtool:
@@ -819,9 +824,11 @@ distcleancheck: distclean
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(LTLIBRARIES) config.h
+all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) config.h
+install-binPROGRAMS: install-libLTLIBRARIES
+
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -851,8 +858,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f libxmlfixes/src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f libxmlfixes/src/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
 
@@ -862,16 +867,16 @@ maintainer-clean-generic:
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
+	clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-		-rm -f libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-error.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-htmlish.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-input.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-parse_chat.Plo
+		-rm -f src/$(DEPDIR)/error.Plo
+	-rm -f src/$(DEPDIR)/htmlish.Plo
+	-rm -f src/$(DEPDIR)/input.Plo
+	-rm -f src/$(DEPDIR)/main.Po
+	-rm -f src/$(DEPDIR)/parse_chat.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -894,7 +899,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am: install-binPROGRAMS install-libLTLIBRARIES
 
 install-html: install-html-am
 
@@ -919,11 +924,11 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-		-rm -f libxmlfixes/src/$(DEPDIR)/libhtmlish_la-libxmlfixes.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-error.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-htmlish.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-input.Plo
-	-rm -f src/$(DEPDIR)/libhtmlish_la-parse_chat.Plo
+		-rm -f src/$(DEPDIR)/error.Plo
+	-rm -f src/$(DEPDIR)/htmlish.Plo
+	-rm -f src/$(DEPDIR)/input.Plo
+	-rm -f src/$(DEPDIR)/main.Po
+	-rm -f src/$(DEPDIR)/parse_chat.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -940,27 +945,28 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES
+uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES
 
 .MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles am--refresh check \
-	check-am clean clean-cscope clean-generic clean-libLTLIBRARIES \
-	clean-libtool cscope cscopelist-am ctags ctags-am dist \
-	dist-all dist-bzip2 dist-gzip dist-lzip dist-shar dist-tarZ \
-	dist-xz dist-zip distcheck distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-libtool \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-libLTLIBRARIES \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-libLTLIBRARIES
+	check-am clean clean-binPROGRAMS clean-cscope clean-generic \
+	clean-libLTLIBRARIES clean-libtool cscope cscopelist-am ctags \
+	ctags-am dist dist-all dist-bzip2 dist-gzip dist-lzip \
+	dist-shar dist-tarZ dist-xz dist-zip distcheck distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-libtool distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-libLTLIBRARIES install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS \
+	uninstall-libLTLIBRARIES
 
 .PRECIOUS: Makefile
 
@@ -988,9 +994,6 @@ $(srcdir)/$(1)/configure.ac:
 		git clone $(3) $(srcdir)/$(1)/ \
 	fi
 endef
-
-A:=$(info $(call make_sublib_fn,html_when,libhtmlwhen.la))
-B:=$(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

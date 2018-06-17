@@ -1,10 +1,11 @@
-#                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
-
 AC_PREREQ([2.69])
-AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
-AC_CONFIG_SRCDIR([html_when/ensure.h])
+AC_INIT([htmlish], [1.0], [derp])
+AC_CONFIG_SRCDIR([src/htmlish.c])
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
+LT_INIT
 
 # Checks for programs.
 AC_PROG_CC
@@ -32,14 +33,7 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([dup2 memchr mkdir munmap setenv strcasecmp strchr strdup strrchr strstr strtol])
 
-AC_CONFIG_FILES([Makefile
-                 git-tools/Makefile
-                 html_when/Makefile
-                 html_when/git-tools/Makefile
-                 html_when/libxmlfixes/Makefile
-                 html_when/libxmlfixes/coolmake/Makefile
-                 html_when/libxmlfixes/git-tools/Makefile])
-AC_CONFIG_SUBDIRS([html_when/libxml2
-                   html_when/libxmlfixes/libxml2
-                   libxml2])
+git submodule update --init
+
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
