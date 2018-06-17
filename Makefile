@@ -8,7 +8,7 @@ define AUTORECONF
 $(TOP)/configure: $(TOP)/configure.ac $(TOP)/Makefile.in
 	cd $(TOP) && autoconf
 
-$(TOP)/configure.ac | $(TOP)
+$(TOP)/configure.ac: | $(TOP)
 
 $(TOP)/config.h.in: | $(TOP)
 	cd $(TOP) && autoheader

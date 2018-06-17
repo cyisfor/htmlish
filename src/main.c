@@ -146,7 +146,7 @@ int main(void) {
     } else {
         output = htmlReadMemory(defaultTemplate,sizeof(defaultTemplate),"","utf-8",
 																HTML_PARSE_RECOVER |
-																HTML_PARSE_NOBLANKS |
+													ls			HTML_PARSE_NOBLANKS |
 																HTML_PARSE_COMPACT);
     }
 		/* This sets up the template, filling in placeholder elements
