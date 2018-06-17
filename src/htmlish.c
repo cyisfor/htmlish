@@ -333,7 +333,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 					enum wanted_tags tag = lookup_wanted(e->name);
 					switch(tag) {
 					case W_CHAT: // yay, coupling!
-						fputs(stderr,"chat found\n");
+						fputs("chat found\n", stderr);
 						maybeEndParagraph(ctx,"chat");
 						/* all <chat> is hish, so that parse_chat can work on paragraphs, not
 							 line-ish-things. No need to reinvent the line/tag/mixer/thingy.
@@ -346,6 +346,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 					case W_P:
 					case W_DIV:
 					case W_DD:
+					case W_DL:
 					case W_TABLE:
 					case W_HR:
 					case W_BLOCKQUOTE:
