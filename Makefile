@@ -8,6 +8,8 @@ define AUTORECONF
 $(TOP)/configure: $(TOP)/configure.ac $(TOP)/Makefile.in
 	cd $(TOP) && autoconf
 
+$(TOP)/configure.ac | $(TOP)
+
 $(TOP)/config.h.in: | $(TOP)
 	cd $(TOP) && autoheader
 
@@ -30,7 +32,7 @@ $(eval $(AUTORECONF))
 
 libxml2: | libxmlfixes
 	ln -rs libxmlfixes/libxml2 libxml2
-libxmlfixes
+libxmlfixes:
 	git submodule init --update
 build:
 	mkdir $@
