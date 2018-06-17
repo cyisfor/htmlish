@@ -24,7 +24,7 @@ parse_SOURCES = src/main.c
 
 libxmlfixes/libxmlfixes.la libxmlfixes/wanted_tags.gen.h:
 	$(MAKE) -C libxmlfixes
-libxml2/libxml2.la: | ./libxml2
+libxml2/libxml2.la: | libxml2
 	$(MAKE) -C libxml2
 
 libxml2:

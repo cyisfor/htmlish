@@ -8,7 +8,7 @@ define AUTORECONF
 $(TOP)/configure: $(TOP)/configure.ac $(TOP)/Makefile.in
 	cd $(TOP) && autoconf
 
-$(TOP)/config.h.in:
+$(TOP)/config.h.in: | $(TOP)
 	cd $(TOP) && autoheader
 
 $(TOP)/Makefile.in: $(TOP)/Makefile.am $(TOP)/aclocal.m4 $(TOP)/config.h.in
@@ -17,7 +17,7 @@ $(TOP)/Makefile.in: $(TOP)/Makefile.am $(TOP)/aclocal.m4 $(TOP)/config.h.in
 $(TOP)/aclocal.m4: $(TOP)/m4/libtool.m4
 	cd $(TOP) && aclocal -I m4
 
-$(TOP)/m4/libtool.m4:
+$(TOP)/m4/libtool.m4: | $(TOP)
 	cd $(TOP) && libtoolize --automake
 endef
 
@@ -27,6 +27,11 @@ TOP:=libxml2
 $(eval $(AUTORECONF))
 TOP:=libxmlfixes
 $(eval $(AUTORECONF))
+
+libxml2: | libxmlfixes
+	ln -rs libxmlfixes/libxml2 libxml2
+libxmlfixes
+	git submodule init --update
 build:
 	mkdir $@
 
