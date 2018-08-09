@@ -358,7 +358,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 						}
 						break;
 					case W_A:
-						fprintf(stderr, "Anchor found: %p",e->properties);
+						fprintf(stderr, "Anchor found: %p\n",e->properties->children->content);
 					default:
 						//start a paragraph if this element is a wimp
 						//but only if the last text node ended on a newline.
