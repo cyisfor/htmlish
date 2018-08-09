@@ -358,7 +358,7 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 						}
 						break;
 					case W_A:
-						fprintf(stderr, "Anchor found: %p",e->attr);										
+						fprintf(stderr, "Anchor found: %p",e->properties);
 					default:
 						//start a paragraph if this element is a wimp
 						//but only if the last text node ended on a newline.
@@ -515,7 +515,7 @@ void htmlish_doc(xmlNode* oroot, xmlNode* content, xmlDoc* doc, bool as_children
 
 void htmlish_str(xmlNode* content, const char* s, size_t l, bool as_children) {
 	xmlNode* oroot = xmlDocGetRootElement(content->doc);
-	
+
 	xmlDoc* doc = strFunky(s,l);
 	return htmlish_doc(oroot,content,doc,as_children);
 }
@@ -523,7 +523,7 @@ void htmlish_str(xmlNode* content, const char* s, size_t l, bool as_children) {
 void htmlish(xmlNode* content, int fd, bool as_children) {
 
 	xmlNode* oroot = xmlDocGetRootElement(content->doc);
-	
+
 	xmlDoc* doc = readFunky(fd,LITLEN("bad file passed"));
 	return htmlish_doc(oroot,content,doc,as_children);
 }
@@ -582,7 +582,7 @@ xmlNode* getContent(xmlNode* oroot, bool createBody, bool* as_child) {
 	if(false == createBody) {
 		return oroot; // just use root I guess?
 	}
-	
+
 	xmlNode* body = findOrCreate(oroot,"body");
 	assert(body != NULL);
   return body;
