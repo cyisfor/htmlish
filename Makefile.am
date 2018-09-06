@@ -11,7 +11,7 @@ libhtmlish_la_SOURCES = \
 	src/parse_chat.c \
 	src/input.c \
 	src/error.c
-libhtmlish_LIBADD = libxmlfixes/libxmlfixes.la
+libhtmlish_la_LIBADD = libxmlfixes/libxmlfixes.la
 libhtmlish_la_HEADERS = src/htmlish.h src/input.h src/parse_chat.h
 libhtmlish_ladir = $(includedir)/libhtmlish
 
