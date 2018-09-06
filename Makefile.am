@@ -19,4 +19,4 @@ parse_LDADD = libhtmlish.la
 
 parse_SOURCES = src/main.c
 
-noinst_SUBDIRS = libxmlfixes
+SUBDIRS = libxmlfixes
