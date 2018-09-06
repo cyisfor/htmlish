@@ -2,7 +2,9 @@ BUILT_SOURCES = libxmlfixes/wanted_tags.gen.h
 
 ACLOCAL_AMFLAGS = -I m4
 
-XMLINC=-I$(srcdir)/libxml2/include -Ilibxmlfixes/libxml2/include
+XMLINC=-I$(srcdir)/libxml2/include \
+	-I$(srcdir)/libxmlfixes/ \
+	-I$(srcdir)/libxmlfixes/libxml2/build/include
 
 bin_PROGRAMS = parse
 
@@ -15,17 +17,18 @@ libhtmlish_la_SOURCES = \
 	src/parse_chat.c \
 	src/input.c \
 	src/error.c
-
+libhtmlish_la_LIBADD = libxmlfixes/lib/libxmlfixes.la
 
 parse_LDADD = libhtmlish.la \
-	libxmlfixes/libxmlfixes.la \
-	libxml2/libxml2.la
+	$(srcdir)/libxmlfixes/libxmlfixes.la \
+	$(srcdir)/libxml2/lib/libxml2.la
+
 parse_SOURCES = src/main.c
 
-libxmlfixes/libxmlfixes.la libxmlfixes/wanted_tags.gen.h:
-	$(MAKE) -C libxmlfixes
-libxml2/libxml2.la: | libxml2
-	$(MAKE) -C libxml2
+libxmlfixes/lib/libxmlfixes.la libxmlfixes/wanted_tags.gen.h:
+	$(MAKE) -C $(srcdir)/libxmlfixes install
+libxml2/lib/libxml2.la: | libxml2
+	$(MAKE) -C libxml2/build
 
 libxml2:
 	ln -rs libxmlfixes/libxml2 libxml2
