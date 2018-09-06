@@ -1,5 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
+AM_LIBTOOLFLAGS = --quiet --no-warnings
+
 bin_PROGRAMS = parse
 lib_LTLIBRARIES = libhtmlish.la
 
