@@ -1,4 +1,3 @@
-BUILT_SOURCES = libxmlfixes/libxml2/include/libxml/xmlversion.h libxmlfixes/wanted_tags.gen.h
 ACLOCAL_AMFLAGS = -I m4
 
 bin_PROGRAMS = parse
