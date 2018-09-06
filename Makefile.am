@@ -4,7 +4,7 @@ bin_PROGRAMS = parse
 lib_LTLIBRARIES = libhtmlish.la
 
 AM_CFLAGS=-I libxml2/include -I $(srcdir)/libxml2/include \
-	-I $(srcdir)/libxmlfixes/src
+		-I libxmlfixes/src -I $(srcdir)/libxmlfixes/src
 
 libhtmlish_la_SOURCES = \
 	src/htmlish.c \

@@ -14,13 +14,6 @@
 
 
 
-# because autotools devs are retarded nazis
-# we're not allowed to redefine named variables
-# so only meaningless $(1) $(2) etc are allowed
-# this is because they know what's best for us
-# and what we were doing isn't the right way to do it anyway
-# not that they know what the right way is
-# but it's surely not what they don't allow
 
 
 VPATH = ..
@@ -107,14 +100,16 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
-	$(am__configure_deps) $(am__DIST_COMMON)
+	$(am__configure_deps) $(libhtmlish_la_HEADERS) \
+	$(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)"
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)" \
+	"$(DESTDIR)$(libhtmlish_ladir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -144,7 +139,7 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libhtmlish_la_DEPENDENCIES = $(srcdir)/html_when/libhtmlwhen.la
+libhtmlish_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libhtmlish_la_OBJECTS = src/htmlish.lo src/parse_chat.lo \
 	src/input.lo src/error.lo
@@ -155,7 +150,7 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 am_parse_OBJECTS = src/main.$(OBJEXT)
 parse_OBJECTS = $(am_parse_OBJECTS)
-parse_DEPENDENCIES = libhtmlish.la $(srcdir)/html_when/libhtmlwhen.la
+parse_DEPENDENCIES = libhtmlish.la
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -200,6 +195,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+HEADERS = $(libhtmlish_la_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
 	$(LISP)config.h.in
 # Read a list of newline-separated strings from the standard input,
@@ -223,7 +219,7 @@ CTAGS = ctags
 CSCOPE = cscope
 AM_RECURSIVE_TARGETS = cscope
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(srcdir)/m4/make-sublib.mk $(top_srcdir)/build-aux/compile \
+	$(top_srcdir)/build-aux/compile \
 	$(top_srcdir)/build-aux/config.guess \
 	$(top_srcdir)/build-aux/config.sub \
 	$(top_srcdir)/build-aux/depcomp \
@@ -249,14 +245,14 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /shared/user/code/htmlish/build-aux/missing aclocal-1.16
+ACLOCAL = ${SHELL} /home/creation/stories/code/generate-c/htmlish/build-aux/missing aclocal-1.16
 ALLOCA = 
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AR = ar
-AUTOCONF = ${SHELL} /shared/user/code/htmlish/build-aux/missing autoconf
-AUTOHEADER = ${SHELL} /shared/user/code/htmlish/build-aux/missing autoheader
-AUTOMAKE = ${SHELL} /shared/user/code/htmlish/build-aux/missing automake-1.16
+AUTOCONF = ${SHELL} /home/creation/stories/code/generate-c/htmlish/build-aux/missing autoconf
+AUTOHEADER = ${SHELL} /home/creation/stories/code/generate-c/htmlish/build-aux/missing autoheader
+AUTOMAKE = ${SHELL} /home/creation/stories/code/generate-c/htmlish/build-aux/missing automake-1.16
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -290,7 +286,7 @@ LIPO =
 LN_S = ln -s
 LTLIBOBJS = 
 LT_SYS_LIBRARY_PATH = 
-MAKEINFO = ${SHELL} /shared/user/code/htmlish/build-aux/missing makeinfo
+MAKEINFO = ${SHELL} /home/creation/stories/code/generate-c/htmlish/build-aux/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -313,10 +309,10 @@ SET_MAKE =
 SHELL = /bin/sh
 STRIP = strip
 VERSION = 1.0
-abs_builddir = /shared/user/code/htmlish/build
-abs_srcdir = /shared/user/code/htmlish/build/..
-abs_top_builddir = /shared/user/code/htmlish/build
-abs_top_srcdir = /shared/user/code/htmlish/build/..
+abs_builddir = /home/creation/stories/code/generate-c/htmlish/build
+abs_srcdir = /home/creation/stories/code/generate-c/htmlish/build/..
+abs_top_builddir = /home/creation/stories/code/generate-c/htmlish/build
+abs_top_srcdir = /home/creation/stories/code/generate-c/htmlish/build/..
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_DUMPBIN = 
@@ -325,7 +321,7 @@ am__leading_dot = .
 am__quote = 
 am__tar = $${TAR-tar} chof - "$$tardir"
 am__untar = $${TAR-tar} xf -
-bindir = /shared/user/code/htmlish
+bindir = ${exec_prefix}/bin
 build = x86_64-pc-linux-gnu
 build_alias = 
 build_cpu = x86_64
@@ -345,7 +341,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /shared/user/code/htmlish/build-aux/install-sh
+install_sh = ${SHELL} /home/creation/stories/code/generate-c/htmlish/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -354,45 +350,41 @@ mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /shared/user/code/htmlish
+prefix = /home/creation/stories/code/generate-c/htmlish/derp
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = ..
+subdirs =  libxmlfixes
 sysconfdir = ${prefix}/etc
 target_alias = 
 top_build_prefix = 
 top_builddir = .
 top_srcdir = ..
-BUILT_SOURCES = 
 ACLOCAL_AMFLAGS = -I m4
-XMLINC = -I$(srcdir)/libxml2/include -I$(srcdir)/libxml2/build/include
 lib_LTLIBRARIES = libhtmlish.la
-AM_CFLAGS = $(XMLINC) -I $(srcdir)/html_when/src -I $(srcdir)/src -I $(srcdir)/libxmlfixes/src
+AM_CFLAGS = -I $(includedir)/libxml2/ -I $(includedir)/libxmlfixes/
 libhtmlish_la_SOURCES = \
 	src/htmlish.c \
 	src/parse_chat.c \
 	src/input.c \
 	src/error.c
 
-parse_LDADD = libhtmlish.la \
-	$(srcdir)/html_when/libhtmlwhen.la
-
+libhtmlish_LIBADD = libxmlfixes/libxmlfixes.la
+libhtmlish_la_HEADERS = src/htmlish.h src/input.h src/parse_chat.h
+libhtmlish_ladir = $(includedir)/libhtmlish
+parse_LDADD = libhtmlish.la
 parse_SOURCES = src/main.c
-libhtmlish_la_LIBADD = $(srcdir)/html_when/libhtmlwhen.la
-make_sublib = $(eval $(call make_sublib_fn, $(1), $(2)))
-make_local_git = $(eval $(call make_local_git_fn, $(1), $(2), $(3)))
-A := $(info $(call make_sublib, html_when, libhtmlwhen.la))
-B := $(info $(call git_local, html_when, $(HOME)/code/html_when, https://github.com/cyisfor/html_when.git))
-all: $(BUILT_SOURCES) config.h
+noinst_SUBDIRS = libxmlfixes
+all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/m4/make-sublib.mk $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -414,7 +406,6 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(srcdir)/m4/make-sublib.mk $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -595,6 +586,27 @@ clean-libtool:
 
 distclean-libtool:
 	-rm -f libtool config.lt
+install-libhtmlish_laHEADERS: $(libhtmlish_la_HEADERS)
+	@$(NORMAL_INSTALL)
+	@list='$(libhtmlish_la_HEADERS)'; test -n "$(libhtmlish_ladir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(libhtmlish_ladir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(libhtmlish_ladir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(libhtmlish_ladir)'"; \
+	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(libhtmlish_ladir)" || exit $$?; \
+	done
+
+uninstall-libhtmlish_laHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(libhtmlish_la_HEADERS)'; test -n "$(libhtmlish_ladir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(libhtmlish_ladir)'; $(am__uninstall_files_from_dir)
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -822,17 +834,15 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) config.h
+check: check-am
+all-am: Makefile $(PROGRAMS) $(LTLIBRARIES) $(HEADERS) config.h
 install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libhtmlish_ladir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
+install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -864,7 +874,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
@@ -893,7 +902,7 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-libhtmlish_laHEADERS
 
 install-dvi: install-dvi-am
 
@@ -945,9 +954,10 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES
+uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES \
+	uninstall-libhtmlish_laHEADERS
 
-.MAKE: all check install install-am install-strip
+.MAKE: all install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles am--refresh check \
 	check-am clean clean-binPROGRAMS clean-cscope clean-generic \
@@ -960,40 +970,17 @@ uninstall-am: uninstall-binPROGRAMS uninstall-libLTLIBRARIES
 	install install-am install-binPROGRAMS install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
 	install-exec-am install-html install-html-am install-info \
-	install-info-am install-libLTLIBRARIES install-man install-pdf \
+	install-info-am install-libLTLIBRARIES \
+	install-libhtmlish_laHEADERS install-man install-pdf \
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-libLTLIBRARIES
+	uninstall-libLTLIBRARIES uninstall-libhtmlish_laHEADERS
 
 .PRECIOUS: Makefile
 
-
-define make_sublib_fn
-$(srcdir)/$(1)/build/$(2): | $(srcdir)/$(1)/build/Makefile 
-  $(MAKE) -C $(srcdir)/$(1)/build
-
-$(srcdir)/$(1)/build/Makefile: $(srcdir)/$(1)/configure | $(srcdir)/$(name
-)/build
-  (cd $(srcdir)/$(1)/build; . ../$(srcdir)/$(1)/configure)
-
-$(srcdir)/$(1)/build: | $(srcdir)/$(1)
-  mkdir $$@
-
-$(srcdir)/$(1)/configure: | $(srcdir)/$(1)/configure.ac
-  (cd $(srcdir)/$(1); . ./autogen.sh)
-endef
-
-define make_local_git_fn
-$(srcdir)/$(1)/configure.ac:
-	if [[ -d "$(2)" ]]; then \
-		git clone $(2) $(srcdir)/$(1)/ \
-	else \
-		git clone $(3) $(srcdir)/$(1)/ \
-	fi
-endef
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

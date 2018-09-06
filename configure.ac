@@ -36,4 +36,5 @@ AC_CHECK_FUNCS([dup2 memchr mkdir munmap setenv strcasecmp strchr strdup strrchr
 git submodule update --init
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_SUBDIRS([libxmlfixes])
 AC_OUTPUT
