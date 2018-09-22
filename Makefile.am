@@ -1,11 +1,13 @@
 ACLOCAL_AMFLAGS = -I m4
 
-AM_LIBTOOLFLAGS = --quiet --no-warnings
+AM_LIBTOOLFLAGS ?= --quiet --no-warnings
 
 bin_PROGRAMS = parse
 lib_LTLIBRARIES = libhtmlish.la
 
-AM_CFLAGS=-I libxmlfixes/libxml2/include -I $(srcdir)/libxml2/include \
+LIBXML2=libxmlfixes/libxml2
+
+AM_CFLAGS=-I $(LIBXML2)/include -I $(srcdir)/$(LIBXML2)/include \
 		-I libxmlfixes/src -I $(srcdir)/libxmlfixes/src
 
 libhtmlish_la_SOURCES = \
