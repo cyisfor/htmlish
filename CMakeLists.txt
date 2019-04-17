@@ -20,17 +20,16 @@ add_library(htmlish
 	src/input.c
 	src/error.c)
 
-target_include_directories(htmlish PUBLIC
+set(includes
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_BINARY_DIR}"
 	"libxmlfixes/libxml2/include"
 	"${CMAKE_CURRENT_BINARY_DIR}/libxmlfixes/libxml2/include")
+target_include_directories(htmlish PUBLIC
+	${includes})
 
 target_include_directories(test_parse PUBLIC
-	"${CMAKE_CURRENT_SOURCE_DIR}"
-	"${CMAKE_CURRENT_BINARY_DIR}"
-	"libxmlfixes/libxml2/include"
-	"${CMAKE_CURRENT_BINARY_DIR}/libxmlfixes/libxml2/include")
+	${includes})
 target_link_libraries(htmlish PUBLIC xmlfixes)
 target_link_libraries(test_parse PUBLIC htmlish)
 add_subdirectory(libxmlfixes)
