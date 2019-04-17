@@ -5,7 +5,7 @@
 #include "parse_chat.h"
 
 #include "libxmlfixes/wanted_tags.gen.h"
-#include "libxmlfixes.h"
+#include "libxmlfixes/src/libxmlfixes.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>

@@ -14,9 +14,10 @@ add_library(htmlish
 	src/error.c)
 
 target_include_directories(htmlish PUBLIC
-	"libxmlfixes/src"
-	"${CMAKE_CURRENT_BINARY_DIR}/libxmlfixes/src"
+	"${CMAKE_CURRENT_SOURCE_DIR}"
+	"${CMAKE_CURRENT_BINARY_DIR}"
 	"libxmlfixes/libxml2/include"
 	"${CMAKE_CURRENT_BINARY_DIR}/libxmlfixes/libxml2/include")
-
+target_link_libraries(htmlish PUBLIC xmlfixes)
 add_subdirectory(libxmlfixes)
+
