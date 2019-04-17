@@ -68,7 +68,9 @@ int main(int argc, char *argv[])
 		char buf[0x100];
 		snprintf(buf,0x100,"test/parse%d.hish",i);
 		int fd = open(buf,O_RDONLY);
-		if(fd < 0) exit(3);
+		if(fd < 0) {
+			exit(0);
+		}
 		printf("test %d...",i);
 		fflush(stdout);
 		xmlDoc* doc = xmlCopyDoc(template, 1);

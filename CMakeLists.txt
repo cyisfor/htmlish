@@ -4,7 +4,9 @@ project(htmlish VERSION 0.1)
 add_executable(parse
 	src/main.c)
 
-add_test(parse test_parse)
+add_test(NAME parse
+	COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_parse"
+	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(test_parse
 	src/test_parse.c)
 enable_testing()
