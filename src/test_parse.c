@@ -10,6 +10,7 @@
 
 #include <sys/mman.h> // mmap
 #include <sys/stat.h>
+#include <sys/wait.h> // waitpid
 
 #include <stdio.h>
 #include <assert.h>
@@ -21,7 +22,7 @@
 #define LITLEN(a) (a),sizeof(a)-1
 
 
-static void dump_to_mem(xmlDoc* doc,xmlChar** result, int* rlen) {
+static void dump_to_mem(xmlDoc* doc,xmlChar** result, size_t* rlen) {
 	// SIGH
 	static xmlCharEncodingHandler* encoding = NULL;
 	xmlOutputBuffer* out = xmlAllocOutputBuffer(encoding);
@@ -46,15 +47,15 @@ const char defaultTemplate[] =
   "</head>\n"
   "<body/></html>";
 
+void on_error(void * userData, xmlErrorPtr error) {
+	if(htmlish_handled_error(error)) return;
+}
 
 int main(int argc, char *argv[])
 {
 
 	LIBXML_TEST_VERSION;
 
-	void on_error(void * userData, xmlErrorPtr error) {
-			if(htmlish_handled_error(error)) return;
-	}
 	xmlSetStructuredErrorFunc(NULL,on_error);
 
 	xmlDoc* template = htmlReadMemory(defaultTemplate,sizeof(defaultTemplate)-1,
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
 		htmlish(content,fd,true);
 		close(fd);
 		xmlChar* result = NULL;
-		int rlen = 0;
+		size_t rlen = 0;
 		dump_to_mem(doc,&result,&rlen);
 		snprintf(buf,0x100,"test/parse%d.html",i);
 		fd = open(buf,O_RDONLY);
@@ -98,7 +99,7 @@ WRITE_ANYWAY:
 			char* expected = mmap(NULL,info.st_size,PROT_READ,MAP_PRIVATE,fd,0);
 			close(fd);
 			if(info.st_size != rlen) {
-				printf("sizes don't match! expected: %d actual: %d\n",info.st_size,rlen);
+				printf("sizes don't match! expected: %ld actual: %ld\n",info.st_size,rlen);
 			}
 			if(info.st_size != rlen || 0 != memcmp(expected,result,rlen)) {
 				puts(buf);

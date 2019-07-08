@@ -37,7 +37,7 @@ static void parseEnvFile(const char* path, xmlNodeSetPtr nodes) {
 	xmlDoc* doc = readFunky(inp,path,plen);
 	close(inp);
 	if(!doc) {
-		fprintf(stderr,"Couldn't parse %.*s",plen,path);
+		fprintf(stderr,"Couldn't parse %.*s",(int)plen,path);
 		exit(5);
 	}
 	xmlNode* root = xmlDocGetRootElement(doc);
@@ -119,7 +119,9 @@ static void dump_to_fd(int dest, xmlDoc* src) {
 	assert(xmlOutputBufferClose(out) > 0);
 }
 
-
+void on_error(void * userData, xmlErrorPtr error) {
+	if(htmlish_handled_error(error)) return;
+}
 
 int main(void) {
 
@@ -129,9 +131,6 @@ int main(void) {
     }
     LIBXML_TEST_VERSION;
 
-		void on_error(void * userData, xmlErrorPtr error) {
-			if(htmlish_handled_error(error)) return;
-		}
 		xmlSetStructuredErrorFunc(NULL,on_error);
 
     setupInput();
