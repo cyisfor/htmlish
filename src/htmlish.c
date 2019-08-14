@@ -113,6 +113,16 @@
 /* Should be able to perform this whitespace processing inside other elements,
    maybe if they're given a special attribute to indicate it */
 
+/* HTML Comments should be preserved but completely free of side effects.
+   So once a node is ended, any state changes must be reversible, so if the next node is a comment node, it can be passed on verbatim, and the next node continued as if part of the previous one.
+
+   So text1 COMMENT text2 -> text1 + text2
+   text1 COMMENT element1 -> text1 element1
+   end_element1 COMMENT text1 -> end_element1 text1
+   end_element1 COMMENT element2 -> end_element1 element2
+
+ */
+
 struct ishctx {
 	xmlNode* e;
 	xmlNs* ns;
@@ -320,6 +330,9 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
             fprintf(stderr,"Entity boo %s %s\n",e->name,e->content);
             exit(23);
             break;
+		case XML_COMMENT_NODE:
+			ctx->endedNewline = false;
+			break;
         case XML_TEXT_NODE:
             // if this is a text node, it doesn't matter whether the previous text node
             // ended in a newline or not. The important thing is to know whether THIS
