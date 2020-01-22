@@ -1,4 +1,6 @@
 this is a line
-<!-- this is a comment -->
+
+<!-- this is a comment --><a foo></a>
+
 line 2 <!-- inner comment --> still line 2
 line 3

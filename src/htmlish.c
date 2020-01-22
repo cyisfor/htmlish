@@ -330,9 +330,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
             fprintf(stderr,"Entity boo %s %s\n",e->name,e->content);
             exit(23);
             break;
-		case XML_COMMENT_NODE:
-			ctx->endedNewline = false;
-			break;
         case XML_TEXT_NODE:
             // if this is a text node, it doesn't matter whether the previous text node
             // ended in a newline or not. The important thing is to know whether THIS
@@ -346,7 +343,6 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 					enum wanted_tags tag = lookup_wanted(e->name);
 					switch(tag) {
 					case W_CHAT: // yay, coupling!
-						fputs("chat found\n", stderr);
 						maybeEndParagraph(ctx,"chat");
 						/* all <chat> is hish, so that parse_chat can work on paragraphs, not
 							 line-ish-things. No need to reinvent the line/tag/mixer/thingy.
@@ -390,6 +386,10 @@ static void processRoot(struct ishctx* ctx, xmlNode* root) {
 				}
         default:
             newthingy(ctx,xmlDocCopyNode(e,ctx->e->doc,1));
+			if(e->type == XML_COMMENT_NODE) {
+				newthingy(ctx, xmlNewText(""));
+				ctx->endedNewline = false;
+			}
         };
         e = next;
     }
