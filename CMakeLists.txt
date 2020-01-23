@@ -22,6 +22,7 @@ add_library(htmlish
 
 target_link_libraries(htmlish PUBLIC xmlfixes)
 target_link_libraries(test_parse PUBLIC htmlish)
+target_include_directories(htmlish PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/add_module")
 include(AddModule)
