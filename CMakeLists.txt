@@ -20,17 +20,6 @@ add_library(htmlish
 	src/input.c
 	src/error.c)
 
-set(includes
-	"${CMAKE_CURRENT_SOURCE_DIR}"
-	"${CMAKE_CURRENT_BINARY_DIR}/module_bin"
-	"${CMAKE_CURRENT_BINARY_DIR}/modules"
-	"${CMAKE_CURRENT_BINARY_DIR}/module_bin/libxmlfixes/libxml2/include"
-	"${CMAKE_CURRENT_BINARY_DIR}/modules/libxmlfixes/libxml2/include")
-target_include_directories(htmlish PUBLIC
-	${includes})
-
-target_include_directories(test_parse PUBLIC
-	${includes})
 target_link_libraries(htmlish PUBLIC xmlfixes)
 target_link_libraries(test_parse PUBLIC htmlish)
 
@@ -38,7 +27,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/add_module")
 include(AddModule)
 
 add_module(libxmlfixes
-  GIT ec3213ca31232d3270f8922d76f03c5416b79d66
+  GIT 46a2a226bacbe1271ca3e0927be0166493e02c78
   /home/repo/libxmlfixes
   git@github.com:cyisfor/libxmlfixes.git
   https://github.com/cyisfor/libxmlfixes.git)
