@@ -22,8 +22,9 @@ add_library(htmlish
 
 set(includes
 	"${CMAKE_CURRENT_SOURCE_DIR}"
-	"${CMAKE_CURRENT_BINARY_DIR}"
-	"libxmlfixes/modules/libxml2/include"
+	"${CMAKE_CURRENT_BINARY_DIR}/module_bin"
+	"${CMAKE_CURRENT_BINARY_DIR}/modules"
+	"${CMAKE_CURRENT_BINARY_DIR}/module_bin/libxmlfixes/libxml2/include"
 	"${CMAKE_CURRENT_BINARY_DIR}/modules/libxmlfixes/libxml2/include")
 target_include_directories(htmlish PUBLIC
 	${includes})
