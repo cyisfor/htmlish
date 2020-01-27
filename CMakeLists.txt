@@ -28,8 +28,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/add_module")
 include(AddModule)
 
 add_module(libxmlfixes
-  GIT ae3139be71e1e90e2a5c5f1858acfc8af3e39234
-  /home/repo/libxmlfixes
+  GIT 1c097e3f0ab748c2720b0b50906278892718e55b
+  file://$ENV{HOME}/code/libxmlfixes
+  file://$ENV{HOME}/repo/libxmlfixes
   git@github.com:cyisfor/libxmlfixes.git
   https://github.com/cyisfor/libxmlfixes.git)
 
